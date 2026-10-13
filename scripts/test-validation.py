@@ -211,6 +211,8 @@ class PackageValidationTests(unittest.TestCase):
              'from a website, Instagram, or files.'),
             ('The same tool name has two different contracts; do not mix their '
              'inputs or polling tools.'),
+            ('Before requesting one, verify that the Brand is ready and has an '
+             'active Skill'),
             'If `generate_image` accepts a top-level `prompt` and `brand_session_id`',
             'Rainbrand applies brand styling automatically.',
             ('This catalog also provides `edit_image`, `resize_image`, '

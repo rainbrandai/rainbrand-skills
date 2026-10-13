@@ -94,6 +94,7 @@ validate_plugin_sources() {
     'Fall back to browser-based docs lookup only when connected tool discovery is unavailable or fails, or a real tool error requires documentation.' \
     'use `onboard_brand` when the user asks to create or onboard a brand from a website, Instagram, or files.' \
     'The same tool name has two different contracts; do not mix their inputs or polling tools.' \
+    'Before requesting one, verify that the Brand is ready and has an active Skill' \
     'If `generate_image` accepts a top-level `prompt` and `brand_session_id`' \
     'Rainbrand applies brand styling automatically.' \
     'This catalog also provides `edit_image`, `resize_image`, `remove_background`, and `vectorize_image`' \

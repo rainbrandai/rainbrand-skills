@@ -75,9 +75,13 @@ supply it. Follow the matching generation path below.
 
 If the catalog exposes `create_brief` and `get_brief`, you can
 [request a Brief](https://docs.rainbrand.com/guides/request-brief) for
-task-specific guidance and assets. Wait for it to complete before using its
-guidance. Briefs are independently available from Model Gateway tools; do not
-assume either capability implies the other.
+task-specific guidance and assets. Before requesting one, verify that the Brand
+is ready and has an active Skill: check `status` and `active_skill` in MCP `get_brand`, or `status`
+and `activeSkill` in REST `GET /brands/{id}`. If no ready Brand with an active
+Skill exists, create one or wait for creation to complete. Wait for the Brief
+to complete before using its guidance. Briefs are independently available from
+Model Gateway tools; do not assume either
+capability implies the other.
 
 For a general overview or selected files, use `get_brand` and `view_files`.
 Retrieve the complete Brand Skill when you need a portable snapshot, rather
