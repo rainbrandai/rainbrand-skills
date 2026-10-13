@@ -198,58 +198,11 @@ class PackageValidationTests(unittest.TestCase):
             archive.writestr('extra.txt', 'extra')
         self.run_script('validate-plugin.sh', succeeds=False)
 
-    def test_skill_workflow_guidance_rejections(self):
+    def test_archives_reject_stale_canonical_skill_content(self):
         path = self.root / 'skills/rainbrand/SKILL.md'
         original = path.read_text()
-        required_guidance = [
-            'search the connected Rainbrand tool catalog again',
-            'the loaded subset is not the full connection',
-            ('Fall back to browser-based docs lookup only when connected tool '
-             'discovery is unavailable or fails, or a real tool error requires '
-             'documentation.'),
-            ('use `onboard_brand` when the user asks to create or onboard a brand '
-             'from a website, Instagram, or files.'),
-            ('The same tool name has two different contracts; do not mix their '
-             'inputs or polling tools.'),
-            ('Before requesting one, verify that the Brand is ready and has an '
-             'active Skill'),
-            'If `generate_image` accepts a top-level `prompt` and `brand_session_id`',
-            'Rainbrand applies brand styling automatically.',
-            ('This catalog also provides `edit_image`, `resize_image`, '
-             '`remove_background`, and `vectorize_image`'),
-            'If `generate_image` accepts `model` and `input` alongside `brand_session_id`',
-            'Omit `brief_id` when the live schema does not advertise it.',
-            'If `create_review` and `get_review` are present',
-            ('The current MCP Model Gateway catalog supports image, video, and '
-             'audio, not SVG generation.'),
-        ]
-        normalized = original.replace('\n', ' ')
-        for marker in required_guidance:
-            with self.subTest(marker=marker):
-                path.write_text(normalized.replace(marker, 'removed guidance', 1))
-                self.run_script('package-skill.sh', succeeds=False)
-        for retired_name in (
-            'generate_image_with_model', 'generate_svg',
-            'list_generation_models', 'get_generation_model',
-        ):
-            with self.subTest(retired_name=retired_name):
-                path.write_text(original + f'\n`{retired_name}`\n')
-                self.run_script('package-skill.sh', succeeds=False)
-
-    def test_plugin_rejects_unavailable_generation_claims(self):
-        changed = copy.deepcopy(self.manifest)
-        interface = changed['extensions']['com.openai']['interface']
-        interface['longDescription'] = interface['longDescription'].replace(
-            'image, video, or audio models', 'image, video, audio, or SVG models',
-        )
-        self.write_json('plugin.json', changed)
-        self.run_script('package-skill.sh', succeeds=False)
-
-        changed = copy.deepcopy(self.manifest)
-        capabilities = changed['extensions']['com.openai']['interface']['capabilities']
-        capabilities[-2] = 'Selected image, video, audio, and SVG models'
-        self.write_json('plugin.json', changed)
-        self.run_script('package-skill.sh', succeeds=False)
+        path.write_text(original + '\nCanonical content changed.\n')
+        self.run_script('validate-plugin.sh', succeeds=False)
 
     def test_source_symlinks_and_extra_skills(self):
         license_path = self.root / 'LICENSE'

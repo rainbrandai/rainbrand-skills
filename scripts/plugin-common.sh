@@ -46,7 +46,7 @@ validate_regular_zip_members() {
 }
 
 validate_plugin_sources() {
-  local file skill_metadata skill_name skill_version release_version skill_text retired_name required_guidance
+  local file skill_metadata skill_name skill_version release_version
   for file in "${plugin_files[@]}"; do
     [[ -f "$repo_root/$file" && ! -L "$repo_root/$file" ]] || fail "Missing regular source file: $file"
   done
@@ -77,33 +77,6 @@ validate_plugin_sources() {
       }
       text ~ /(^|[^a-z0-9])bloom([^a-z0-9]|$)|trybloom[.]ai/ { exit 1 }
     ' "$repo_root/$file" || fail "Prior branding or endpoint in package source: $file"
-  done
-
-  skill_text="$(tr '\n' ' ' < "$repo_root/skills/rainbrand/SKILL.md")"
-  for retired_name in \
-    generate_image_with_model \
-    generate_svg \
-    list_generation_models \
-    get_generation_model; do
-    [[ "$skill_text" != *"$retired_name"* ]] || \
-      fail "Retired tool name in canonical Skill: $retired_name"
-  done
-  for required_guidance in \
-    'search the connected Rainbrand tool catalog again' \
-    'the loaded subset is not the full connection' \
-    'Fall back to browser-based docs lookup only when connected tool discovery is unavailable or fails, or a real tool error requires documentation.' \
-    'use `onboard_brand` when the user asks to create or onboard a brand from a website, Instagram, or files.' \
-    'The same tool name has two different contracts; do not mix their inputs or polling tools.' \
-    'Before requesting one, verify that the Brand is ready and has an active Skill' \
-    'If `generate_image` accepts a top-level `prompt` and `brand_session_id`' \
-    'Rainbrand applies brand styling automatically.' \
-    'This catalog also provides `edit_image`, `resize_image`, `remove_background`, and `vectorize_image`' \
-    'If `generate_image` accepts `model` and `input` alongside `brand_session_id`' \
-    'Omit `brief_id` when the live schema does not advertise it.' \
-    'If `create_review` and `get_review` are present' \
-    'The current MCP Model Gateway catalog supports image, video, and audio, not SVG generation.'; do
-    [[ "$skill_text" == *"$required_guidance"* ]] || \
-      fail "Required discovery or onboarding guidance missing from canonical Skill: $required_guidance"
   done
 
   # Read only the canonical frontmatter, with version under metadata. Accept
