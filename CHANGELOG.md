@@ -5,6 +5,16 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-10-13
+
+### Changed
+
+- Replace the temporary logo with the final Rainbrand icon.
+- Update repository and download links to `trybloomai/rainbrand-skills`.
+- Document direct ChatGPT workspace ZIP upload and manual updates, separately
+  from optional public-directory publication.
+- Rebuild both distribution archives.
+
 ## [1.1.2] - 2026-10-08
 
 ### Changed
