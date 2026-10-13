@@ -20,7 +20,11 @@ REVIEW_RECORDING_URL = (
 )
 PLUGIN_MEMBERS = [
     'plugin.json', 'mcp.json', 'skills/rainbrand/SKILL.md', 'README.md',
-    'CHANGELOG.md', 'LICENSE',
+    'CHANGELOG.md', 'LICENSE', 'assets/rainbrand-logo.png',
+]
+CLAUDE_PLUGIN_MEMBERS = [
+    '.claude-plugin/plugin.json', '.mcp.json', 'skills/rainbrand/SKILL.md',
+    'README.md', 'CHANGELOG.md', 'LICENSE', 'assets/rainbrand-logo.png',
 ]
 
 
@@ -32,18 +36,15 @@ class PackageValidationTests(unittest.TestCase):
         shutil.copytree(ROOT, self.root, ignore=shutil.ignore_patterns('.git', '.context'))
         self.manifest = json.loads((self.root / 'plugin.json').read_text())
         self.mcp = json.loads((self.root / 'mcp.json').read_text())
-        # Exercise an intentionally incomplete draft even after final artwork
-        # and recording have been added to the real distribution.
-        interface = self.manifest['extensions']['com.openai']['interface']
-        interface.pop('logo', None)
-        interface.pop('composerIcon', None)
+        self.claude_manifest = json.loads((self.root / '.claude-plugin/plugin.json').read_text())
+        self.claude_mcp = json.loads((self.root / '.mcp.json').read_text())
+        # Keep the baseline incomplete for directory submission. Native upload
+        # includes the icon; the portable no-artwork draft is tested separately.
         self.manifest['extensions']['com.openai']['review'].pop('demo_recording_url', None)
-        artwork = self.root / 'assets/rainbrand-logo.png'
-        if artwork.exists():
-            artwork.unlink()
         self.write_json('plugin.json', self.manifest)
         self.run_script('package-skill.sh')
         self.run_script('package-plugin.sh')
+        self.run_script('package-claude-plugin.sh')
 
     def run_script(self, name, *args, succeeds=True, env=None):
         result = subprocess.run(
@@ -129,6 +130,14 @@ class PackageValidationTests(unittest.TestCase):
                 self.run_script('package-skill.sh', succeeds=False)
 
     def test_submission_gates_and_icon_pair(self):
+        interface = self.manifest['extensions']['com.openai']['interface']
+        interface.pop('logo', None)
+        interface.pop('composerIcon', None)
+        (self.root / 'assets/rainbrand-logo.png').unlink()
+        self.write_json('plugin.json', self.manifest)
+        # Preserve the portable package's support for no-artwork drafts.
+        self.run_script('package-skill.sh')
+        self.run_script('package-plugin.sh')
         self.run_script('validate-plugin.sh')
         blocked = self.run_script('validate-plugin.sh', '--submission', succeeds=False)
         self.assertIn('approved Rainbrand artwork', blocked.stderr)
@@ -203,6 +212,7 @@ class PackageValidationTests(unittest.TestCase):
         original = path.read_text()
         path.write_text(original + '\nCanonical content changed.\n')
         self.run_script('validate-plugin.sh', succeeds=False)
+        self.run_script('validate-claude-plugin.sh', succeeds=False)
 
     def test_source_symlinks_and_extra_skills(self):
         license_path = self.root / 'LICENSE'
@@ -220,18 +230,153 @@ class PackageValidationTests(unittest.TestCase):
     def test_reproducibility_and_exact_members(self):
         import os
         before = {path.name: path.read_bytes() for path in (self.root / 'dist').glob('*.zip')}
-        for timezone in ('Pacific/Honolulu', 'Asia/Tokyo'):
+        for timezone, mask in (('Pacific/Honolulu', '077'), ('Asia/Tokyo', '022')):
             environment = {**os.environ, 'TZ': timezone}
-            command = 'umask 077; bash scripts/package-skill.sh && bash scripts/package-plugin.sh'
+            command = (f'umask {mask}; bash scripts/package-skill.sh && '
+                       'bash scripts/package-plugin.sh && bash scripts/package-claude-plugin.sh')
             subprocess.run(['bash', '-c', command], cwd=self.root, env=environment,
                            check=True, capture_output=True)
             for name, contents in before.items():
                 self.assertEqual((self.root / 'dist' / name).read_bytes(), contents)
         self.run_script('validate-plugin.sh')
+        self.run_script('validate-claude-plugin.sh')
         with zipfile.ZipFile(self.root / 'dist/rainbrand.plugin.zip') as archive:
             self.assertEqual(archive.namelist(), PLUGIN_MEMBERS)
         with zipfile.ZipFile(self.root / 'dist/rainbrand.skill.zip') as archive:
             self.assertEqual(archive.namelist(), ['rainbrand/SKILL.md'])
+        with zipfile.ZipFile(self.root / 'dist/rainbrand.claude-plugin.zip') as archive:
+            self.assertEqual(archive.namelist(), CLAUDE_PLUGIN_MEMBERS)
+            for member in archive.infolist():
+                self.assertEqual(member.date_time, (1980, 1, 1, 0, 0, 0))
+                self.assertEqual(stat.S_IMODE(member.external_attr >> 16), 0o644)
+                self.assertEqual(archive.read(member), (self.root / member.filename).read_bytes())
+
+    def test_claude_manifest_rejections(self):
+        changes = [
+            ('version', '9.9.9'), ('version', 118), ('name', 'other'),
+            ('description', ''), ('description', []), ('author', 'Rainbrand'),
+            ('author', {'name': 'Rainbrand', 'unsupported': True}),
+            ('homepage', 'https://example.com'), ('repository', False),
+            ('license', 'other'), ('$schema', self.manifest['$schema']),
+            ('extensions', {}), ('skills', './forked-skill/'),
+            ('icon', '../outside.png'), ('icon', '/tmp/logo.png'),
+            ('icon', './other.png'), ('icon', None),
+        ]
+        for field, value in changes:
+            with self.subTest(field=field, value=value):
+                changed = copy.deepcopy(self.claude_manifest)
+                changed[field] = value
+                self.write_json('.claude-plugin/plugin.json', changed)
+                self.run_script('package-claude-plugin.sh', succeeds=False)
+        for field in self.claude_manifest:
+            with self.subTest(missing=field):
+                changed = copy.deepcopy(self.claude_manifest)
+                del changed[field]
+                self.write_json('.claude-plugin/plugin.json', changed)
+                self.run_script('package-claude-plugin.sh', succeeds=False)
+        for payload in (
+            '{"name":"rainbrand","name":"rainbrand"}',
+            '{"name":"rainbrand",}',
+            json.dumps(self.claude_manifest) + ' null',
+            json.dumps(self.claude_manifest).replace('Rainbrand', r'\u0042loom'),
+        ):
+            with self.subTest(payload=payload[:40]):
+                (self.root / '.claude-plugin/plugin.json').write_text(payload)
+                self.run_script('package-claude-plugin.sh', succeeds=False)
+
+    def test_claude_mcp_rejections(self):
+        server = self.claude_mcp['mcpServers']['rainbrand']
+        changes = [
+            {}, {'mcpServers': []}, {'mcpServers': {}},
+            {'mcpServers': {'other': server}},
+            {'mcpServers': {'rainbrand': server, 'extra': server}},
+            {**self.claude_mcp, '$schema': self.mcp['$schema']},
+        ]
+        for field, value in (
+            ('type', 'streamable-http'), ('type', 'stdio'), ('type', True),
+            ('url', 'https://example.com/mcp'), ('url', 'http://mcp.rainbrand.com/mcp'),
+            ('url', None), ('headers', {'Authorization': 'invalid'}),
+            ('command', 'node'),
+        ):
+            changes.append({'mcpServers': {'rainbrand': {**server, field: value}}})
+        for field in server:
+            changed = copy.deepcopy(self.claude_mcp)
+            del changed['mcpServers']['rainbrand'][field]
+            changes.append(changed)
+        for changed in changes:
+            with self.subTest(mcp=changed):
+                self.write_json('.mcp.json', changed)
+                self.run_script('package-claude-plugin.sh', succeeds=False)
+        for payload in (
+            '{"mcpServers":{},"mcpServers":{}}',
+            '{"mcpServers":{},}',
+            json.dumps(self.claude_mcp) + ' false',
+            json.dumps(self.claude_mcp).replace('"type": "http"', '"type": "http", "type": "http"'),
+        ):
+            with self.subTest(payload=payload[:40]):
+                (self.root / '.mcp.json').write_text(payload)
+                self.run_script('package-claude-plugin.sh', succeeds=False)
+
+    def test_claude_corrupt_or_unexpected_archive_members(self):
+        source = self.root / 'dist/rainbrand.claude-plugin.zip'
+        with zipfile.ZipFile(source) as archive:
+            originals = [(member, archive.read(member)) for member in archive.infolist()]
+        mutations = ('extra', 'duplicate', 'wrapper', 'symlink', 'traversal',
+                     'missing-manifest', 'missing-mcp', 'missing-icon', 'nested-zip',
+                     *('changed:' + name for name in CLAUDE_PLUGIN_MEMBERS))
+        missing = {'missing-manifest': '.claude-plugin/plugin.json',
+                   'missing-mcp': '.mcp.json', 'missing-icon': 'assets/rainbrand-logo.png'}
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                candidate = self.root / 'candidate.zip'
+                with warnings.catch_warnings(), zipfile.ZipFile(candidate, 'w') as archive:
+                    warnings.simplefilter('ignore', UserWarning)
+                    for member, data in originals:
+                        member = copy.copy(member)
+                        if member.filename == missing.get(mutation):
+                            continue
+                        if mutation == 'changed:' + member.filename:
+                            data += b'\nChanged bytes\n'
+                        if mutation == 'wrapper':
+                            member.filename = 'wrapper/' + member.filename
+                        if mutation == 'symlink' and member.filename == 'assets/rainbrand-logo.png':
+                            member.external_attr = (stat.S_IFLNK | 0o777) << 16
+                        archive.writestr(member, data)
+                    if mutation == 'extra':
+                        archive.writestr('plugin.json', '{}')
+                    if mutation == 'traversal':
+                        archive.writestr('../outside', 'extra')
+                    if mutation == 'nested-zip':
+                        archive.writestr('dist/rainbrand.plugin.zip', source.read_bytes())
+                    if mutation == 'duplicate':
+                        archive.writestr(*originals[0])
+                self.run_script('validate-claude-plugin.sh', candidate, succeeds=False)
+        candidate.write_bytes(b'Not a ZIP')
+        self.run_script('validate-claude-plugin.sh', candidate, succeeds=False)
+        # The two plugin formats cannot accidentally be accepted interchangeably.
+        self.run_script('validate-plugin.sh', source, succeeds=False)
+        self.run_script('validate-claude-plugin.sh', self.root / 'dist/rainbrand.plugin.zip', succeeds=False)
+
+    def test_claude_icon_source_and_archive_parity(self):
+        path = self.root / 'assets/rainbrand-logo.png'
+        original = path.read_bytes()
+        path.write_bytes(original + b'changed')
+        self.run_script('validate-claude-plugin.sh', succeeds=False)
+        path.unlink()
+        self.run_script('package-claude-plugin.sh', succeeds=False)
+        target = Path(self.temp.name) / 'outside-logo.png'
+        target.write_bytes(original)
+        path.symlink_to(target)
+        self.run_script('package-claude-plugin.sh', succeeds=False)
+
+    def test_claude_manifest_source_guards(self):
+        path = self.root / '.claude-plugin/plugin.json'
+        target = Path(self.temp.name) / 'outside-manifest.json'
+        target.write_bytes(path.read_bytes())
+        path.unlink()
+        self.run_script('package-claude-plugin.sh', succeeds=False)
+        path.symlink_to(target)
+        self.run_script('package-claude-plugin.sh', succeeds=False)
 
 
 if __name__ == '__main__':

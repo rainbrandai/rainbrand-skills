@@ -19,6 +19,15 @@ if [[ -e "$repo_root/assets/rainbrand-logo.png" ]]; then
   plugin_files+=(assets/rainbrand-logo.png)
 fi
 skill_files=(rainbrand/SKILL.md)
+claude_plugin_files=(
+  .claude-plugin/plugin.json
+  .mcp.json
+  skills/rainbrand/SKILL.md
+  README.md
+  CHANGELOG.md
+  LICENSE
+  assets/rainbrand-logo.png
+)
 
 fail() {
   echo "Error: $*" >&2
@@ -47,7 +56,13 @@ validate_regular_zip_members() {
 
 validate_plugin_sources() {
   local file skill_metadata skill_name skill_version release_version
-  for file in "${plugin_files[@]}"; do
+  local source_files=("${plugin_files[@]}")
+  # Portable drafts may still omit artwork. Native builds require the icon.
+  if [[ "${1:-}" == --claude ]]; then
+    source_files+=("${claude_plugin_files[@]}")
+    [[ -d "$repo_root/.claude-plugin" && ! -L "$repo_root/.claude-plugin" ]] || fail "Expected a regular source directory: .claude-plugin"
+  fi
+  for file in "${source_files[@]}"; do
     [[ -f "$repo_root/$file" && ! -L "$repo_root/$file" ]] || fail "Missing regular source file: $file"
   done
   for file in skills skills/rainbrand; do
@@ -67,7 +82,7 @@ validate_plugin_sources() {
   # The active package must not carry prior presentation or connection data.
   # The review recording remains on its immutable v1.1.2 release, so allow
   # only that exact versioned URL while rejecting prior product branding.
-  for file in "${plugin_files[@]}"; do
+  for file in "${source_files[@]}"; do
     awk -v allowed_url="$review_recording_url" '
       {
         text = tolower($0)
@@ -132,6 +147,12 @@ validate_plugin_sources() {
     -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/plugin.json"
   awk -v kind=mcp -v expected_name="$skill_name" \
     -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/mcp.json"
+  if [[ "${1:-}" == --claude ]]; then
+    awk -v kind=claude-plugin -v expected_name="$skill_name" -v expected_version="$skill_version" \
+      -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/.claude-plugin/plugin.json"
+    awk -v kind=claude-mcp -v expected_name="$skill_name" \
+      -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/.mcp.json"
+  fi
 }
 
 build_deterministic_zip() {

@@ -5,6 +5,39 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ## [Unreleased]
 
+## [1.1.8] - 2026-10-13
+
+### Added
+
+- Add `rainbrand.claude-plugin.zip` as a separate Claude-native distribution,
+  with `.claude-plugin/plugin.json`, root `.mcp.json`, and the hosted Rainbrand
+  MCP endpoint using transport `http`.
+- Include the Rainbrand image in the native archive and reference it through
+  the manifest's top-level `icon`. This fixes a non-behavioral presentation
+  defect in the first native candidate.
+- Add deterministic native packaging and validation for closed manifest fields,
+  malformed MCP configs, exact archive members, Skill and image byte parity,
+  and reproducible builds.
+
+### Changed
+
+- Route Claude native upload, ChatGPT workspace upload, and standalone Skill
+  installation to their respective archives before the first download step.
+- Preserve the portable Agent Plugins 1.0 layout and standalone Skill archive.
+  All three distributions copy the single canonical Skill.
+- Bump Skill metadata to 1.1.8 to maintain package version invariants; Skill
+  guidance is unchanged. Hero's mirrored Skill copies must be synchronized to
+  the canonical 1.1.8 bytes before release.
+
+### Validation
+
+- A live tester reports that the v1.1.8 candidate uploaded successfully in
+  Claude as Rainbrand with exactly one Skill and one Connector. That candidate
+  omitted the image and showed the generic plug glyph.
+- Re-upload the final package to confirm the Rainbrand image. OAuth sign-in
+  and connected-tool discovery remain pending; successful upload alone does
+  not establish those behaviors.
+
 ## [1.1.7] - 2026-10-13
 
 ### Changed

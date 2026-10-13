@@ -1,7 +1,8 @@
-# Offline checks for Rainbrand's portable Agent Plugins 1.0.0 profile.
+# Offline checks for Rainbrand's portable and Claude-native profiles.
 # Uses POSIX awk, not a general JSON Schema engine. Parse JSON before checking
 # types and the closed field sets used here; reject duplicate object keys.
 # Contract: https://agent-plugins.org/specification
+# Native contract: https://claude.com/docs/plugins/build
 
 function abort(message) {
     print "Error: " FILENAME ": " message > "/dev/stderr"
@@ -178,7 +179,7 @@ END {
         required_string(root, "description", "description", 0)
         exact(member(root, "author", "object"), "name", "Rainbrand")
         # Keep OpenAI submission metadata inside the portable extension so the
-        # normal Agent Plugins archive remains the only package to release.
+        # native adapter does not carry provider-specific review metadata.
         extensions = member(root, "extensions", "object")
         closed(extensions, "com.openai", "extensions")
         openai = member(extensions, "com.openai", "object")
@@ -270,14 +271,28 @@ END {
                 for (j = 1; j <= size[item]; j++) type(children[item, j], "string", "keyword")
             } else if (key != "extensions") type(item, "string", key)
         }
-    } else if (kind == "mcp") {
-        closed(root, "$schema mcpServers", "mcp.json")
-        exact(root, "$schema", "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json")
+    } else if (kind == "claude-plugin") {
+        closed(root, "name version description author homepage repository license icon", ".claude-plugin/plugin.json")
+        exact(root, "name", expected_name)
+        exact(root, "version", expected_version)
+        required_string(root, "description", "description", 0)
+        author = member(root, "author", "object")
+        closed(author, "name", "author")
+        exact(author, "name", "Rainbrand")
+        exact(root, "homepage", "https://www.rainbrand.com/")
+        exact(root, "repository", "https://github.com/trybloomai/rainbrand-skills")
+        exact(root, "license", "MIT")
+        exact(root, "icon", "./assets/rainbrand-logo.png")
+    } else if (kind == "mcp" || kind == "claude-mcp") {
+        if (kind == "mcp") {
+            closed(root, "$schema mcpServers", "mcp.json")
+            exact(root, "$schema", "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json")
+        } else closed(root, "mcpServers", ".mcp.json")
         servers = member(root, "mcpServers", "object")
         if (size[servers] != 1 || !(servers SUBSEP expected_name in children)) abort("Expected exactly one MCP server named " expected_name)
         server = member(servers, expected_name, "object")
         closed(server, "type url", "Rainbrand MCP server")
-        exact(server, "type", "streamable-http")
+        exact(server, "type", (kind == "mcp" ? "streamable-http" : "http"))
         exact(server, "url", "https://mcp.rainbrand.com/mcp")
     } else abort("Unknown validation profile")
 }
