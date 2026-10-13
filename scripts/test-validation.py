@@ -15,7 +15,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
 REVIEW_RECORDING_URL = (
-    'https://github.com/trybloomai/bloom-skills/releases/download/v1.1.2/'
+    'https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/'
     'rainbrand-review-walkthrough-v1.1.2.mp4'
 )
 PLUGIN_MEMBERS = [
@@ -149,8 +149,8 @@ class PackageValidationTests(unittest.TestCase):
         for recording_url in ('', 'http://video.example.com/walkthrough.mp4',
                               'https:///walkthrough.mp4', 'https://video.example.com/bad path',
                               'https://user:password@video.example.com/walkthrough.mp4',
-                              REVIEW_RECORDING_URL.replace('rainbrand-review-walkthrough-v1.1.2.mp4',
-                                                           'other.mp4'), None):
+                              'https://github.com/trybloomai/bloom-skills/releases/'
+                              'download/v1.1.2/other.mp4', None):
             with self.subTest(recording_url=recording_url):
                 changed['extensions']['com.openai']['review']['demo_recording_url'] = recording_url
                 self.write_json('plugin.json', changed)

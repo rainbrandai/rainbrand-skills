@@ -4,7 +4,7 @@ description: Use Rainbrand to assess or integrate brand context, create brands, 
 license: MIT
 metadata:
   author: Rainbrand
-  version: "1.1.2"
+  version: "1.1.3"
   url: https://docs.rainbrand.com/mcp/getting-started
 ---
 

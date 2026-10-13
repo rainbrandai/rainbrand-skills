@@ -4,7 +4,7 @@
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export LC_ALL=C
 export TZ=UTC
-review_recording_url="https://github.com/trybloomai/bloom-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4"
+review_recording_url="https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4"
 plugin_files=(
   plugin.json
   mcp.json
@@ -65,8 +65,8 @@ validate_plugin_sources() {
   fi
 
   # The active package must not carry prior presentation or connection data.
-  # The review recording stays beside the existing distribution until the
-  # repository is renamed, so allow only that exact legacy repository URL.
+  # The review recording remains on its immutable v1.1.2 release, so allow
+  # only that exact versioned URL while rejecting prior product branding.
   for file in "${plugin_files[@]}"; do
     awk -v allowed_url="$review_recording_url" '
       {

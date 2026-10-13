@@ -16,6 +16,20 @@ client handles authentication.
 
 ## Install
 
+Download the latest [Rainbrand plugin ZIP](https://github.com/trybloomai/rainbrand-skills/releases/latest/download/rainbrand.plugin.zip).
+It bundles the Rainbrand Skill, MCP connection, and icon.
+
+### ChatGPT workspace upload
+
+In ChatGPT on the web:
+
+1. Open the workspace **Admin Console**.
+2. Go to **Plugins → Add → Upload plugin**.
+3. Upload `rainbrand.plugin.zip` and configure workspace access.
+4. Authorize the Rainbrand connection when prompted.
+
+### Standalone Skill
+
 From this checkout, install the Skill in the current project:
 
 ```bash
@@ -24,11 +38,9 @@ npx skills add . --skill rainbrand
 
 Prefer a project installation so the guidance is reviewable with the project.
 
-### Standalone Skill upload
-
-The local [dist/rainbrand.skill.zip](dist/rainbrand.skill.zip) contains the
-canonical Skill as `rainbrand/SKILL.md`. Upload that archive through Claude's
-Skill upload flow.
+Alternatively, download the latest [Rainbrand Skill ZIP](https://github.com/trybloomai/rainbrand-skills/releases/latest/download/rainbrand.skill.zip)
+and upload it through Claude's Skill upload flow. It contains the canonical
+Skill as `rainbrand/SKILL.md`; configure the MCP connection separately.
 
 ### Portable plugin
 
@@ -52,8 +64,8 @@ LICENSE
 Both manifests declare the Agent Plugins `1.0.0` schemas. `mcp.json` defines
 one server named `rainbrand` with transport `streamable-http` and endpoint
 `https://mcp.rainbrand.com/mcp`. The package contains no credentials.
-`assets/rainbrand-logo.png` is the approved temporary white Rainbrand R on
-black, used for both the OpenAI listing logo and composer icon.
+`assets/rainbrand-logo.png` is the final Rainbrand icon, used for both the
+OpenAI listing logo and composer icon.
 
 ## Connect Rainbrand
 
@@ -71,22 +83,19 @@ in the application's secret store.
 
 ## Provider compatibility
 
-The portable package is a draft for client testing. Successful local validation
-does not establish acceptance by a provider or publication in its directory.
+Use the installation path supported by your client. Package validation checks
+the archive; test authentication and tool use in the target client as well.
 
-| Provider | Current path | Remaining gate |
+| Provider | Installation path | Compatibility notes |
 | --- | --- | --- |
-| OpenAI | Import the portable ZIP and test the remote MCP connection in a supported client. The manifest includes listing copy and review cases. | Complete artwork, recording, ownership verification, reviewer access, client testing, and a new submission for the Rainbrand MCP origin. |
+| OpenAI | Upload the plugin ZIP through the ChatGPT workspace Admin Console, then authorize Rainbrand. | Requires an eligible workspace and upload permission. Public-directory publication is a separate, optional process. |
 | Claude | Upload the standalone Skill ZIP and configure the remote MCP connection separately. | The portable plugin ZIP is not currently compatible with Claude's native plugin upload or directory format. |
-| Cursor | Test the root Agent Plugins manifest from the existing public repository checkout. | Test installation from the public repository and submit its current URL through the marketplace portal. |
+| Cursor | Test the root Agent Plugins manifest from this public repository checkout. | Verify installation and tool use in Cursor. Marketplace publication is a separate process. |
 
-OpenAI's build and submission requirements are documented in
-[Build plugins](https://developers.openai.com/plugins/build/plugins) and
-[Submit your plugin](https://developers.openai.com/plugins/deploy/submission).
-Its [review rules](https://developers.openai.com/plugins/deploy/app-review)
-require a new submission when the MCP server origin changes; this migration
-must not update the previous submission's origin. Test the actual target client;
-importing this ZIP does not establish ChatGPT web availability.
+OpenAI documents workspace installation in
+[Plugin management](https://learn.chatgpt.com/docs/enterprise/plugin-management)
+and the portable format in
+[Build plugins](https://developers.openai.com/plugins/build/plugins).
 
 Claude's native format requires `.claude-plugin/plugin.json` and `.mcp.json`
 with transport `http`. Those root paths conflict with the portable
@@ -104,7 +113,11 @@ manifest is not required for this format. See
 [Cursor plugins](https://cursor.com/docs/reference/plugins) and
 [marketplace submission](https://cursor.com/marketplace/publish).
 
-## Review and publication checklist
+## Optional public-directory publication
+
+Public-directory publication is separate from downloading and uploading the
+plugin to a ChatGPT workspace. The following material is included for a future
+directory submission; it is not required for workspace installation.
 
 The manifest supplies five read-only positive cases and three negative cases
 for OpenAI review. Tool names match the server's raw `tools/list` names:
@@ -126,8 +139,8 @@ portal, never in this repository.
 Before public submission:
 
 - The manifest includes `demo_recording_url` pointing to the
-  [Rainbrand walkthrough](https://github.com/trybloomai/bloom-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4),
-  published with the release.
+  [Rainbrand walkthrough](https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4),
+  published with v1.1.2.
 - If OpenAI issues a new ownership challenge, serve the exact plain-text token
   from the portal at the eligible Rainbrand HTTPS origin. Do not reuse an old
   challenge token.
@@ -137,10 +150,14 @@ Before public submission:
   process. Provider review determines whether these brand and design workflows
   are accepted; the portable format is not universal approval.
 
-A later repository rename is optional housekeeping, not a submission gate.
-Release v1.1.2 includes both distribution ZIPs and the review walkthrough.
-Preserve every earlier tag, release, and asset unchanged. Use the current public
-repository URL in provider portals that require one.
+OpenAI's [submission guide](https://developers.openai.com/plugins/deploy/submission)
+and [review rules](https://developers.openai.com/plugins/deploy/app-review)
+describe this process. An MCP origin change requires a new submission rather
+than an update to the previous submission's origin.
+
+Earlier tags, releases, and assets remain unchanged. Use
+[`trybloomai/rainbrand-skills`](https://github.com/trybloomai/rainbrand-skills)
+in provider portals that require a repository URL.
 
 ## Update or remove
 
@@ -169,9 +186,9 @@ against this checkout. Check submission readiness separately:
 scripts/validate-plugin.sh --submission
 ```
 
-The draft package can pass ordinary validation while submission readiness
-fails for the missing approved artwork and recording metadata. Readiness
-validation does not replace the manual publication and provider checks above.
+Submission readiness checks the additional metadata required for a directory
+submission. It is not required for workspace ZIP upload and does not replace
+client testing or provider review.
 
 The scripts run offline with Bash 3.2 or later, POSIX `awk`, `zip`, Info-ZIP
 `unzip` (including `-Z`), and standard shell utilities. They require no package

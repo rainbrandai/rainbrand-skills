@@ -1,12 +1,13 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "rainbrand",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "The brand layer for agents.",
   "author": {
     "name": "Rainbrand"
   },
   "homepage": "https://www.rainbrand.com/",
+  "repository": "https://github.com/trybloomai/rainbrand-skills",
   "license": "MIT",
   "extensions": {
     "com.openai": {
@@ -80,10 +81,10 @@
             }
           ]
         },
-        "demo_recording_url": "https://github.com/trybloomai/bloom-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4"
+        "demo_recording_url": "https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4"
       },
       "publication": {
-        "release_notes": "Updates Rainbrand submission assets."
+        "release_notes": "Updates the Rainbrand icon, repository links, and ChatGPT workspace ZIP-upload instructions."
       }
     }
   }
