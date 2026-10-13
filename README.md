@@ -17,76 +17,54 @@ client handles authentication.
 
 ## Install
 
-**Current quickstart: connect Rainbrand MCP directly.** Provider-specific plugin
-release checks are still pending. Use the [direct MCP connection](#connect-rainbrand)
-while those checks are completed; the public MCP quickstart remains
-MCP-first until the artifacts are releasable and tested.
+To get started, [connect Rainbrand MCP directly](#connect-rainbrand). You do not
+need to install a standalone Skill to connect.
 
-For launch, prefer the Rainbrand plugin wherever the client and account support
-it: the plugin packages the Rainbrand Skill with the MCP connector/reference.
-Plugin installation does not connect or authorize your Rainbrand account.
-Complete the client's connector setup and OAuth sign-in separately.
+When Rainbrand is available as a plugin in your client, it packages the
+Rainbrand Skill with the MCP connector/reference. Installing a plugin does not
+connect or authorize your Rainbrand account; complete connector setup and
+OAuth sign-in separately.
 
-The following launch paths become customer recommendations only after the
-[provider release gates](#provider-release-gates) pass. Choose the provider and
-installation flow before downloading an archive.
+Choose the installation path supported by your client and account:
 
-| Client or installation flow | Launch recommendation | Package for testing or fallback |
-| --- | --- | --- |
-| Claude with plugin support | Install the Claude-native Rainbrand plugin, then connect its bundled connector. | Pre-directory testers can upload `rainbrand.claude-plugin.zip`. |
-| ChatGPT with plugin support | Install Rainbrand from the Plugins Directory once published, then connect/authenticate when prompted. | `rainbrand.plugin.zip` is the portable/OpenAI package for publishers, testers, or eligible workspace admins. |
-| Other clients, or clients/accounts without plugin support | Connect Rainbrand MCP directly in a compatible client. | No ZIP is required. |
-| Skill-capable clients without plugins, or an existing separate MCP setup | Optionally add the standalone Skill as an advanced fallback. | `rainbrand.skill.zip` supplies guidance only. |
+| Client or installation flow | Installation path |
+| --- | --- |
+| Claude with plugin support | Use the Claude-native Rainbrand plugin. If you have a plugin ZIP for upload, use `rainbrand.claude-plugin.zip`. |
+| ChatGPT with plugin support | Install Rainbrand from the Plugins Directory when it is listed. ZIP upload/import is for publishers, testers, or eligible workspace admins. |
+| Other clients, or clients/accounts without plugin support | Connect Rainbrand MCP directly in a compatible client. No ZIP is required. |
+| Skill-capable clients without plugins, or an existing separate MCP setup | Optionally add `rainbrand.skill.zip` for guidance. MCP must be configured separately. |
 
 The Claude-native and portable/OpenAI archives are **not interchangeable**.
-Do not upload `rainbrand.plugin.zip` through Claude's native plugin flow, or
-use `rainbrand.claude-plugin.zip` as the portable/OpenAI package. Skill upload
-is a separate, optional flow.
+`rainbrand.claude-plugin.zip` is for Claude native plugin upload.
+`rainbrand.plugin.zip` is the portable/OpenAI package. Skill upload is a
+separate, optional flow.
 
 ### Claude: native Rainbrand plugin
 
-Once the Claude release gates pass, recommend the Claude-native Rainbrand
-plugin. For pre-directory testing, build
-[dist/rainbrand.claude-plugin.zip](dist/rainbrand.claude-plugin.zip) with the
-commands below. The [v1.1.8 Claude-native ZIP](https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.8/rainbrand.claude-plugin.zip)
-will be available after authorized publication.
+For Claude native plugin upload, use `rainbrand.claude-plugin.zip` from the
+[Rainbrand releases](https://github.com/trybloomai/rainbrand-skills/releases)
+when available. It includes the Rainbrand Skill and connector configuration.
 
 1. In Claude, open **Customize → Plugins → Add → Upload plugin**.
 2. Upload `rainbrand.claude-plugin.zip`.
 3. Open the plugin's **Connectors** tab, connect Rainbrand, and complete OAuth sign-in.
-4. In a fresh chat, confirm the Rainbrand Skill is available and discover the connected tools.
-
-A live tester reports that a v1.1.8 candidate uploaded successfully as Rainbrand
-with exactly one Skill and one Connector. That candidate omitted the image.
-The corrected package includes it, but visual icon confirmation, OAuth, tool
-discovery, and exact supported surfaces and account requirements remain pending.
+4. Start a fresh chat to use Rainbrand's connected tools.
 
 ### ChatGPT: Plugins Directory
 
-Once Rainbrand is published and the ChatGPT release gates pass, open the
-**Plugins Directory**, find Rainbrand, and install it. Complete the Rainbrand
-connection and OAuth sign-in when prompted, then start a fresh conversation
-and confirm tool discovery. See OpenAI's [plugin installation guidance](https://learn.chatgpt.com/docs/plugins).
+When Rainbrand is listed in the **Plugins Directory**, find it and install it.
+Complete the Rainbrand connection and OAuth sign-in when prompted, then start
+a fresh conversation. Follow the listing's supported surfaces and account
+requirements. See OpenAI's [plugin installation guidance](https://learn.chatgpt.com/docs/plugins).
 
-ZIP upload/import is a publisher, tester, or eligible workspace-admin path.
-It is not the ordinary customer installation path. Directory installation and
-workspace import need separate verification; do not infer one path's supported
-surfaces from another.
+The portable/OpenAI `rainbrand.plugin.zip` is for publisher submission, testing,
+or upload/import by an eligible workspace admin. Import does not grant access
+to Rainbrand or connect workspace members' accounts.
 
-For package testing or submission, build
-[dist/rainbrand.plugin.zip](dist/rainbrand.plugin.zip). The
-[v1.1.8 portable/OpenAI ZIP](https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.8/rainbrand.plugin.zip)
-will be available after authorized publication. Use the upload/import flow
-available to the testing account or workspace. Workspace management requires
-an eligible workspace admin, appropriate access policies, and permission to
-use the Rainbrand connection; import does not grant account access.
-
-OpenAI currently documents imported plugins that declare MCP configuration as
-**Desktop-only**, including remote HTTPS servers. This portable package
-contains `mcp.json`, so test imported use in the ChatGPT desktop app. Do not
-assume it works on web or mobile. The exact Rainbrand directory release path,
-supported surfaces, and account/workspace requirements must be verified before
-launch guidance promises them. See [Plugin management](https://learn.chatgpt.com/docs/enterprise/plugin-management#desktop-only-plugins).
+OpenAI documents imported plugins with MCP configuration as **Desktop-only**,
+including remote HTTPS servers. This restriction applies to this package's
+import path. Directory installation is a separate path; follow its listing for
+supported surfaces. See [Plugin management](https://learn.chatgpt.com/docs/enterprise/plugin-management#desktop-only-plugins).
 
 ### Standalone Skill: optional advanced fallback
 
@@ -125,25 +103,6 @@ For product information, support, and API integration guidance, use the
 [FAQ](https://www.rainbrand.com/faq/). Before building an application or backend
 integration, obtain a current, verified Rainbrand API contract. Keep API keys
 in the application's secret store.
-
-## Provider release gates
-
-Before public onboarding switches to plugin-first, validate the Claude-native
-and portable/OpenAI artifacts independently, using each intended release and
-installation path. For each provider, record:
-
-- Successful package validation and installation of the exact artifact.
-- Correct Rainbrand name and visually confirmed Rainbrand icon.
-- MCP connection and successful OAuth sign-in after installation.
-- Connected-tool discovery in a fresh conversation.
-- Exact supported surfaces and account/workspace requirements.
-
-Local validation proves package structure and source parity. It does not prove
-client behavior, directory availability, account eligibility, or OAuth access.
-Claude's earlier candidate upload passed; the remaining checks must use the
-final package. The ChatGPT directory and restricted upload/import paths require
-independent live verification. Until these gates pass, use direct MCP as the
-current quickstart and keep standalone Skill installation optional.
 
 ## Distribution formats
 

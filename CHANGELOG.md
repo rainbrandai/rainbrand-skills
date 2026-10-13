@@ -21,29 +21,16 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ### Changed
 
-- Define gated plugin-first launch guidance: Claude-native plugin installation,
-  ChatGPT Plugins Directory installation once published, direct MCP for other
-  clients or accounts without plugin support, and standalone Skill only as an
-  optional advanced fallback. Keep the current quickstart direct-MCP-first
-  until each provider's artifact and release path pass live validation.
-- Restrict portable/OpenAI ZIP upload/import guidance to publishers, testers,
-  and eligible workspace admins. Document imported MCP plugins as Desktop-only;
-  verify the directory release path's exact surfaces and account requirements
-  independently. Installing a plugin does not authorize its MCP connection.
+- Clarify provider-specific installation: Claude-native plugin, ChatGPT Plugins
+  Directory when listed, direct MCP for other clients or accounts without plugin
+  support, and standalone Skill as an optional advanced fallback.
+- Reserve portable/OpenAI ZIP upload/import for publishers, testers, and eligible
+  workspace admins. Document the Desktop-only restriction for imported MCP
+  plugins and the separate account authorization step after plugin installation.
 - Preserve the portable Agent Plugins 1.0 layout and standalone Skill archive.
   All three distributions copy the single canonical Skill.
 - Bump Skill metadata to 1.1.8 to maintain package version invariants; Skill
-  guidance is unchanged. Hero's mirrored Skill copies must be synchronized to
-  the canonical 1.1.8 bytes before release.
-
-### Validation
-
-- A live tester reports that the v1.1.8 candidate uploaded successfully in
-  Claude as Rainbrand with exactly one Skill and one Connector. That candidate
-  omitted the image and showed the generic plug glyph.
-- Re-upload the final package to confirm the Rainbrand image. OAuth sign-in
-  and connected-tool discovery remain pending; successful upload alone does
-  not establish those behaviors.
+  guidance is unchanged.
 
 ## [1.1.7] - 2026-10-13
 
