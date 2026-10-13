@@ -92,7 +92,15 @@ validate_plugin_sources() {
     'search the connected Rainbrand tool catalog again' \
     'the loaded subset is not the full connection' \
     'Fall back to browser-based docs lookup only when connected tool discovery is unavailable or fails, or a real tool error requires documentation.' \
-    'use `onboard_brand` when the user asks to create or onboard a brand from a website, Instagram, or files.'; do
+    'use `onboard_brand` when the user asks to create or onboard a brand from a website, Instagram, or files.' \
+    'The same tool name has two different contracts; do not mix their inputs or polling tools.' \
+    'If `generate_image` accepts a top-level `prompt` and `brand_session_id`' \
+    'Rainbrand applies brand styling automatically.' \
+    'This catalog also provides `edit_image`, `resize_image`, `remove_background`, and `vectorize_image`' \
+    'If `generate_image` accepts `model` and `input` alongside `brand_session_id`' \
+    'Omit `brief_id` when the live schema does not advertise it.' \
+    'If `create_review` and `get_review` are present' \
+    'The current MCP Model Gateway catalog supports image, video, and audio, not SVG generation.'; do
     [[ "$skill_text" == *"$required_guidance"* ]] || \
       fail "Required discovery or onboarding guidance missing from canonical Skill: $required_guidance"
   done

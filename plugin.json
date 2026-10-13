@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "rainbrand",
   "version": "1.1.7",
-  "description": "Use Rainbrand to create and onboard brands, retrieve and update brand context, and generate images or video.",
+  "description": "Use Rainbrand to create and onboard brands, retrieve and update brand context, and work with the generation tools available to your account.",
   "author": {
     "name": "Rainbrand"
   },
@@ -14,17 +14,17 @@
       "interface": {
         "displayName": "Rainbrand",
         "shortDescription": "The brand layer for agents.",
-        "longDescription": "Rainbrand is the brand layer for agents. It turns a brand's identity, guidance, and assets into shared context that agents and products can use and update as the brand evolves.\n\nConnect your Rainbrand account to create or onboard a brand from a website, Instagram account, or files. Find accessible brands, retrieve their current context, and update their guidance. Versioned Brand Skills provide structured profiles, written guidance, and asset references for recurring brand work across connected systems.\n\nRainbrand also supports image, video, audio, and SVG generation with selected models. Supported image generation can use a completed Brief to include brand guidance and visual references; other generation requests need the caller to supply the relevant brand context. You can also inspect account, workspace, and credit information.",
+        "longDescription": "Rainbrand is the brand layer for agents. It turns a brand's identity, guidance, and assets into shared context that agents and products can use and update as the brand evolves.\n\nConnect your Rainbrand account to create or onboard a brand from a website, Instagram account, or files. Find accessible brands, retrieve their current context, and update their guidance. Versioned Brand Skills provide structured profiles, written guidance, and asset references for recurring brand work across connected systems.\n\nGeneration follows your account's live tools and schemas. Managed image tools apply brand styling automatically and support image editing, resizing, background removal, and vectorization. Accounts with Model Gateway access instead select image, video, or audio models and supply relevant brand context in model input. Brief and Review tools are independently available; supported image models can use a completed Brief only when the live generation schema includes that option. You can also inspect account, workspace, and credit information.",
         "developerName": "Rainbrand",
         "category": "Creativity",
         "capabilities": [
           "Brand context and Brand Skills",
           "Brand creation and onboarding from websites, Instagram, or files",
           "Brand context updates",
-          "Account and workspace information",
-          "Workspace credit balances",
-          "Image generation with Briefs",
-          "Selected image, video, audio, and SVG models"
+          "Account, workspace, and credit information",
+          "Managed image generation and editing when available",
+          "Selected image, video, and audio models with Model Gateway access",
+          "Task-specific Briefs and asset Reviews when available"
         ],
         "websiteURL": "https://www.rainbrand.com/",
         "supportURL": "https://www.rainbrand.com/faq/",
@@ -91,7 +91,7 @@
         "demo_recording_url": "https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4"
       },
       "publication": {
-        "release_notes": "Improves connected-tool discovery when tasks change or only part of the Rainbrand catalog is loaded. Adds explicit brand onboarding guidance and a controlled onboarding review case, updates generation guidance to current tools and Brief-based image generation, and documents synchronization with Hero's Skill copies."
+        "release_notes": "Improves connected-tool discovery and brand onboarding. Generation guidance now follows the account's live catalog and image schema, distinguishing managed image tools from Model Gateway tools and using Briefs and Reviews only when available. Adds a controlled onboarding review case and documents synchronization with Hero's Skill copies."
       }
     }
   }

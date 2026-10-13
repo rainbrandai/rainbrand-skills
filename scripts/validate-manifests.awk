@@ -190,8 +190,23 @@ END {
         exact(interface, "shortDescription", "The brand layer for agents.")
         exact(interface, "developerName", "Rainbrand")
         exact(interface, "category", "Creativity")
-        required_string(interface, "longDescription", "longDescription", 4000)
-        string_array(member(interface, "capabilities", "array"), "capabilities", 20, 120)
+        long_description = required_string(interface, "longDescription", "longDescription", 4000)
+        if (tolower(long_description) ~ /(^|[^a-z0-9])svg([^a-z0-9]|$)/)
+            abort("longDescription must not claim unavailable SVG generation")
+        capabilities = member(interface, "capabilities", "array")
+        string_array(capabilities, "capabilities", 20, 120)
+        expected_capabilities[1] = "Brand context and Brand Skills"
+        expected_capabilities[2] = "Brand creation and onboarding from websites, Instagram, or files"
+        expected_capabilities[3] = "Brand context updates"
+        expected_capabilities[4] = "Account, workspace, and credit information"
+        expected_capabilities[5] = "Managed image generation and editing when available"
+        expected_capabilities[6] = "Selected image, video, and audio models with Model Gateway access"
+        expected_capabilities[7] = "Task-specific Briefs and asset Reviews when available"
+        if (size[capabilities] != 7) abort("capabilities must contain exactly seven entries")
+        for (i = 1; i <= size[capabilities]; i++) {
+            if (values[children[capabilities, i]] != expected_capabilities[i])
+                abort("Unexpected capability in position " i)
+        }
         exact(interface, "websiteURL", "https://www.rainbrand.com/")
         exact(interface, "supportURL", "https://www.rainbrand.com/faq/")
         exact(interface, "privacyPolicyURL", "https://www.rainbrand.com/privacy/")

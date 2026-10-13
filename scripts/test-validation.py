@@ -209,6 +209,17 @@ class PackageValidationTests(unittest.TestCase):
              'documentation.'),
             ('use `onboard_brand` when the user asks to create or onboard a brand '
              'from a website, Instagram, or files.'),
+            ('The same tool name has two different contracts; do not mix their '
+             'inputs or polling tools.'),
+            'If `generate_image` accepts a top-level `prompt` and `brand_session_id`',
+            'Rainbrand applies brand styling automatically.',
+            ('This catalog also provides `edit_image`, `resize_image`, '
+             '`remove_background`, and `vectorize_image`'),
+            'If `generate_image` accepts `model` and `input` alongside `brand_session_id`',
+            'Omit `brief_id` when the live schema does not advertise it.',
+            'If `create_review` and `get_review` are present',
+            ('The current MCP Model Gateway catalog supports image, video, and '
+             'audio, not SVG generation.'),
         ]
         normalized = original.replace('\n', ' ')
         for marker in required_guidance:
@@ -222,6 +233,21 @@ class PackageValidationTests(unittest.TestCase):
             with self.subTest(retired_name=retired_name):
                 path.write_text(original + f'\n`{retired_name}`\n')
                 self.run_script('package-skill.sh', succeeds=False)
+
+    def test_plugin_rejects_unavailable_generation_claims(self):
+        changed = copy.deepcopy(self.manifest)
+        interface = changed['extensions']['com.openai']['interface']
+        interface['longDescription'] = interface['longDescription'].replace(
+            'image, video, or audio models', 'image, video, audio, or SVG models',
+        )
+        self.write_json('plugin.json', changed)
+        self.run_script('package-skill.sh', succeeds=False)
+
+        changed = copy.deepcopy(self.manifest)
+        capabilities = changed['extensions']['com.openai']['interface']['capabilities']
+        capabilities[-2] = 'Selected image, video, audio, and SVG models'
+        self.write_json('plugin.json', changed)
+        self.run_script('package-skill.sh', succeeds=False)
 
     def test_source_symlinks_and_extra_skills(self):
         license_path = self.root / 'LICENSE'

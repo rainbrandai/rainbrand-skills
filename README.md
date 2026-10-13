@@ -75,6 +75,17 @@ from `mcp.json`; a standalone Skill installation needs it configured separately.
 Complete Rainbrand sign-in, then let the client discover the live tools and
 their schemas. The live tool list determines what the connected account can use.
 
+The Skill follows that catalog and the live `generate_image` schema. Managed
+image generation applies brand styling automatically and returns image IDs;
+Model Gateway generation uses a selected model and model input, with generation
+IDs for checking progress. The managed catalog includes image editing,
+resizing, background removal, and vectorization. The Model Gateway catalog
+instead includes model discovery and image, video, and audio generation.
+
+Brief and Review tools are independently enabled. Use them only when present,
+and pass `brief_id` only when the live image-generation schema supports it.
+The current MCP Model Gateway catalog does not include SVG generation.
+
 For product information, support, and API integration guidance, use the
 [Rainbrand website](https://www.rainbrand.com/) and
 [FAQ](https://www.rainbrand.com/faq/). Before building an application or backend
@@ -149,6 +160,12 @@ the new onboarding case. Run all nine prompts in each target client before
 claiming the updated package passes client testing. Put reviewer credentials
 and private instructions in the provider's review portal, never in this
 repository.
+
+Generation regression testing must cover both managed and Model Gateway
+catalogs, with Briefs and Reviews independently present or absent. Check that
+the agent uses the matching inputs and status tools and does not call missing
+capabilities. These controlled client checks remain pending for v1.1.7;
+package validation alone does not establish that the workflows pass.
 
 Before public submission:
 
