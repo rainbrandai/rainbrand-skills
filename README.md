@@ -119,22 +119,36 @@ Public-directory publication is separate from downloading and uploading the
 plugin to a ChatGPT workspace. The following material is included for a future
 directory submission; it is not required for workspace installation.
 
-The manifest supplies five read-only positive cases and three negative cases
-for OpenAI review. Tool names match the server's raw `tools/list` names:
-`list_brands`, `get_brand`, `get_account`, `list_workspaces`, and `check_credits`.
+The manifest supplies six positive cases and three negative cases for OpenAI
+review. Five positive cases are read-only; the onboarding case creates a brand.
+Tool names match the server's raw `tools/list` names: `list_brands`, `get_brand`,
+`get_account`, `list_workspaces`, `check_credits`, and `onboard_brand`.
 A client may qualify them with the server name, for example
 `mcp__rainbrand__list_brands`.
 
-Prepare a dedicated reviewer account with a sample Stripe brand. Run the
-positive cases in order in the same conversation: the first case supplies the
-Stripe Brand session ID for `get_brand`, and the workspace case supplies the
-personal `workspace_id` for `check_credits`. The personal-credit case expects
-only `check_credits`. The exchange-rate, Tokyo weather, and arithmetic cases
-must invoke no Rainbrand tools; the arithmetic answer is 42. Live connection,
-discovery, and calls to all five tools have passed. The walkthrough exercises
-all eight exact prompts with the dedicated reviewer account and Stripe brand.
-Put reviewer credentials and private instructions in the provider's review
-portal, never in this repository.
+Prepare a dedicated reviewer account with a sample Stripe brand and enough
+credits for one controlled onboarding run. Run the brand-list case before
+`get_brand` to supply the Stripe Brand session ID, and the workspace case
+before `check_credits` to supply the personal `workspace_id`. The personal-credit
+case expects only `check_credits`.
+
+Test onboarding in a conversation immediately after the account case:
+“Which Rainbrand account am I connected to?” followed by “onboard the shakeshack
+website please”. The client should discover `onboard_brand` from the connected
+Rainbrand catalog and call it with Shake Shack's official public website as the
+website source, even if the preceding turn loaded only `get_account`. Use the
+dedicated reviewer account and its default personal workspace for this write.
+Record any created Brand and remove it after the test. Check the returned result and follow the live
+tool contract until the brand is ready or the operation fails; do not claim
+completion from the initial call alone.
+
+The exchange-rate, Tokyo weather, and arithmetic cases must invoke no Rainbrand
+tools; the arithmetic answer is 42. The v1.1.2 walkthrough covers the original
+five read-only positive cases and three negative cases. It does not validate
+the new onboarding case. Run all nine prompts in each target client before
+claiming the updated package passes client testing. Put reviewer credentials
+and private instructions in the provider's review portal, never in this
+repository.
 
 Before public submission:
 
@@ -211,6 +225,19 @@ python3 scripts/test-validation.py
 These tests exercise malformed metadata, unsafe or mismatched archives,
 submission gates, and reproducible builds. Python 3 is required only for this
 test suite, not for package building or validation.
+
+## Keep Hero's copies in sync
+
+This repository owns the published Skill and its releases. Hero keeps identical
+copies for its installed agent Skill and hosted documentation, with installation
+metadata in `skills-lock.json`. Its internal directory and lock key stay the
+same; Hero's synchronization check reports the exact paths and metadata to update.
+
+An edit can start in Hero. Prepare the matching change here, update the version,
+rebuild and validate both archives, then merge and release this repository
+first. Rerun Hero's synchronization check before merging its matching change.
+The check lives in Hero, reads this public source, and reports mismatches; it
+does not publish or modify this repository.
 
 ## License
 

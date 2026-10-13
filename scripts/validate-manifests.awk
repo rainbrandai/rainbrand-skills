@@ -213,13 +213,15 @@ END {
         closed(test_cases, "positive negative", "review.test_cases")
         positive = member(test_cases, "positive", "array")
         negative = member(test_cases, "negative", "array")
-        if (size[positive] != 5) abort("review.test_cases.positive must contain exactly five cases")
+        if (size[positive] != 6) abort("review.test_cases.positive must contain exactly six cases")
         if (size[negative] != 3) abort("review.test_cases.negative must contain exactly three cases")
         expected_tools[1] = "list_brands"
         expected_tools[2] = "get_brand"
         expected_tools[3] = "get_account"
-        expected_tools[4] = "list_workspaces"
-        expected_tools[5] = "check_credits"
+        expected_tools[4] = "onboard_brand"
+        expected_tools[5] = "list_workspaces"
+        expected_tools[6] = "check_credits"
+        expected_positive_prompts[4] = "onboard the shakeshack website please"
         expected_negative_prompts[1] = "What is the current USD/EUR exchange rate?"
         expected_negative_prompts[2] = "What is the weather in Tokyo today?"
         expected_negative_prompts[3] = "What is 17 + 25?"
@@ -231,6 +233,8 @@ END {
             required_string(item, "expected_behavior", "positive expected behavior", 0)
             if (required_string(item, "tools_triggered", "positive tools_triggered", 0) != expected_tools[i])
                 abort("Unexpected tools_triggered value in positive review case " i)
+            if (i in expected_positive_prompts && required_string(item, "prompt", "positive review prompt", 0) != expected_positive_prompts[i])
+                abort("Unexpected prompt in positive review case " i)
         }
         for (i = 1; i <= size[negative]; i++) {
             item = children[negative, i]

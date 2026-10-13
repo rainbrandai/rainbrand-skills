@@ -5,6 +5,22 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ## [Unreleased]
 
+## [1.1.7] - 2026-10-13
+
+### Changed
+
+- Search the connected Rainbrand tool catalog again when the task changes or a
+  needed tool is not loaded. A loaded subset does not represent the full
+  connection; public docs remain reference material.
+- Route brand creation and onboarding from websites, Instagram, or files to
+  `onboard_brand`, with a controlled review case after account lookup.
+- Update generation guidance to use current model tools and completed Briefs
+  for supported image generation. Preserve the distinction between Brief-based
+  image generation and requests where the caller supplies brand context.
+- Document the six positive review cases, three negative cases, and the release
+  order for keeping Hero's Skill copies aligned with this public source.
+- Rebuild both distribution archives with the updated Skill and plugin metadata.
+
 ## [1.1.3] - 2026-10-13
 
 ### Changed

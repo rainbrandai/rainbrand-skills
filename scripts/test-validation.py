@@ -116,8 +116,9 @@ class PackageValidationTests(unittest.TestCase):
 
     def test_review_contract_rejections(self):
         changes = [
-            ('positive', 4, 'tools_triggered', 'list_workspaces, check_credits'),
+            ('positive', 5, 'tools_triggered', 'list_workspaces, check_credits'),
             ('positive', 0, 'tools_triggered', 'rainbrand_list_brands'),
+            ('positive', 3, 'prompt', 'Onboard Shake Shack.'),
             ('negative', 2, 'prompt', 'What is 18 + 25?'),
         ]
         for group, index, field, value in changes:
@@ -196,6 +197,31 @@ class PackageValidationTests(unittest.TestCase):
         with zipfile.ZipFile(self.root / 'dist/rainbrand.skill.zip', 'a') as archive:
             archive.writestr('extra.txt', 'extra')
         self.run_script('validate-plugin.sh', succeeds=False)
+
+    def test_skill_workflow_guidance_rejections(self):
+        path = self.root / 'skills/rainbrand/SKILL.md'
+        original = path.read_text()
+        required_guidance = [
+            'search the connected Rainbrand tool catalog again',
+            'the loaded subset is not the full connection',
+            ('Fall back to browser-based docs lookup only when connected tool '
+             'discovery is unavailable or fails, or a real tool error requires '
+             'documentation.'),
+            ('use `onboard_brand` when the user asks to create or onboard a brand '
+             'from a website, Instagram, or files.'),
+        ]
+        normalized = original.replace('\n', ' ')
+        for marker in required_guidance:
+            with self.subTest(marker=marker):
+                path.write_text(normalized.replace(marker, 'removed guidance', 1))
+                self.run_script('package-skill.sh', succeeds=False)
+        for retired_name in (
+            'generate_image_with_model', 'generate_svg',
+            'list_generation_models', 'get_generation_model',
+        ):
+            with self.subTest(retired_name=retired_name):
+                path.write_text(original + f'\n`{retired_name}`\n')
+                self.run_script('package-skill.sh', succeeds=False)
 
     def test_source_symlinks_and_extra_skills(self):
         license_path = self.root / 'LICENSE'
