@@ -31,8 +31,10 @@ Use only the tools and fields it exposes, and follow their instructions for
 prerequisites, inputs, completion, and recovery. This Skill does not define
 which capabilities a connected account has.
 
-Use public docs as reference. Fall back to browser-based docs lookup only when
-connected discovery is unavailable. For API work, consult the
+Use public docs as reference; connected live tools and schemas remain
+authoritative. Fall back to browser-based docs lookup when connected discovery
+is unavailable or fails, or a real tool error requires contract or documentation
+details. For API work, consult the
 [documentation map](https://docs.rainbrand.com/llms.txt) and the current
 [OpenAPI specification](https://www.rainbrand.com/api/v1/spec.json).
 Do not invent fields, reuse tool names from memory, or infer MCP support from
