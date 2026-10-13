@@ -10,6 +10,29 @@ The portable plugin retains root `plugin.json` and `mcp.json` with transport
 by `icon`. Both connect to `https://mcp.rainbrand.com/mcp`. All three ZIPs copy
 the same canonical `skills/rainbrand/SKILL.md` bytes.
 
+## Installation hierarchy and documentation gate
+
+The current README quickstart remains direct-MCP-first. Plugin-first launch
+recommendations are explicitly pending independent provider validation:
+
+- Claude: prefer the native plugin; ZIP upload is the pre-directory test path.
+  Connect and authenticate the bundled connector after installation.
+- ChatGPT: prefer the Plugins Directory once Rainbrand is published. The
+  portable/OpenAI ZIP remains a publisher, tester, or eligible workspace-admin
+  artifact. Imported plugins declaring MCP configuration are documented as
+  [Desktop-only](https://learn.chatgpt.com/docs/enterprise/plugin-management#desktop-only-plugins),
+  including remote HTTPS servers. Directory support must be checked separately.
+- Other clients or accounts without plugin support: connect MCP directly.
+- Standalone Skill: optional advanced fallback for Skill-capable clients without
+  plugins or an existing separate MCP setup; it does not lead onboarding.
+
+The archive names remain `rainbrand.claude-plugin.zip` (Claude-native),
+`rainbrand.plugin.zip` (portable/OpenAI), and `rainbrand.skill.zip` (Skill-only).
+README labels their roles before any download and forbids interchanging the
+two plugin formats. Installing or importing a plugin does not authorize MCP.
+No MCP contracts, Skill guidance, or Hero quickstart files were changed in this
+documentation follow-up.
+
 ## Commands and results
 
 Run from the repository root:
@@ -26,7 +49,7 @@ does not establish provider approval or live client behavior.
 python3 scripts/test-validation.py
 ```
 
-Exit 0: `Ran 15 tests in 16.926s`, `OK`. Coverage includes malformed native
+Exit 0: `Ran 15 tests in 16.522s`, `OK`. Coverage includes malformed native
 manifest and MCP JSON, duplicate and unsupported fields, version mismatches,
 unsafe archives, missing/altered image members, every native member's byte
 parity, canonical Skill parity, and rejection of the other plugin format.
@@ -70,7 +93,7 @@ Shell syntax and diff checks exited 0. The artifact is
 `dist/rainbrand.claude-plugin.zip`, SHA-256:
 
 ```text
-6dbf50c565737c844369750cdf47865944205dd460941817bec96319ba7975af
+b1cd2afcb8124ef9cfc83793994ecd4f7bf44e480fdecfd8fa1b1f8d95de9916
 ```
 
 Build environment: Bash 5.2.15, Info-ZIP Zip 3.0, UnZip 6.00, Python 3.9.25.
@@ -103,9 +126,17 @@ Remaining gates:
 - Upload the corrected final package and visually confirm the Rainbrand image.
 - Complete OAuth sign-in with the final package.
 - Confirm connected-tool discovery with the final package.
+- Confirm Claude's exact supported surfaces and account/workspace requirements.
+- Independently verify the portable/OpenAI package's installation, Rainbrand
+  name and icon, MCP connection/OAuth, and discovery in a fresh conversation.
+- Verify ChatGPT directory installation separately from restricted desktop
+  upload/import. Record the exact supported surfaces and account/workspace
+  requirements for each intended path; do not promise universal web support.
 - Synchronize Hero's Skill mirrors before publishing the 1.1.8 distributions.
 - After authorized publication, confirm the released native asset matches this
   SHA-256 and repeat the live checks against that released asset.
+- Keep public onboarding direct-MCP-first until both provider release gates
+  pass; only then activate the plugin-first launch recommendations.
 
 **SHIP: NO** until those release gates pass. The artifact is locally validated
 and ready for review and final client testing. No push, PR, merge, release

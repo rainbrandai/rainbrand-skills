@@ -21,8 +21,15 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ### Changed
 
-- Route Claude native upload, ChatGPT workspace upload, and standalone Skill
-  installation to their respective archives before the first download step.
+- Define gated plugin-first launch guidance: Claude-native plugin installation,
+  ChatGPT Plugins Directory installation once published, direct MCP for other
+  clients or accounts without plugin support, and standalone Skill only as an
+  optional advanced fallback. Keep the current quickstart direct-MCP-first
+  until each provider's artifact and release path pass live validation.
+- Restrict portable/OpenAI ZIP upload/import guidance to publishers, testers,
+  and eligible workspace admins. Document imported MCP plugins as Desktop-only;
+  verify the directory release path's exact surfaces and account requirements
+  independently. Installing a plugin does not authorize its MCP connection.
 - Preserve the portable Agent Plugins 1.0 layout and standalone Skill archive.
   All three distributions copy the single canonical Skill.
 - Bump Skill metadata to 1.1.8 to maintain package version invariants; Skill
