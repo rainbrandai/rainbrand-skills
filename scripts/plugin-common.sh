@@ -19,6 +19,17 @@ if [[ -e "$repo_root/assets/rainbrand-logo.png" ]]; then
   plugin_files+=(assets/rainbrand-logo.png)
 fi
 skill_files=(rainbrand/SKILL.md)
+bloom_skill_files=(bloom/SKILL.md)
+release_files=(rainbrand.skill.zip bloom.skill.zip rainbrand.plugin.zip rainbrand.claude-plugin.zip)
+claude_plugin_files=(
+  .claude-plugin/plugin.json
+  .mcp.json
+  skills/rainbrand/SKILL.md
+  README.md
+  CHANGELOG.md
+  LICENSE
+  assets/rainbrand-logo.png
+)
 
 fail() {
   echo "Error: $*" >&2
@@ -45,43 +56,8 @@ validate_regular_zip_members() {
   ' || fail "Archive members must be regular files: $1"
 }
 
-validate_plugin_sources() {
-  local file skill_metadata skill_name skill_version release_version
-  for file in "${plugin_files[@]}"; do
-    [[ -f "$repo_root/$file" && ! -L "$repo_root/$file" ]] || fail "Missing regular source file: $file"
-  done
-  for file in skills skills/rainbrand; do
-    [[ -d "$repo_root/$file" && ! -L "$repo_root/$file" ]] || fail "Expected a regular source directory: $file"
-  done
-  for file in "$repo_root"/skills/*; do
-    [[ "$file" == "$repo_root/skills/rainbrand" ]] || fail "Expected only the Rainbrand Skill"
-  done
-  if [[ -e "$repo_root/assets" || -L "$repo_root/assets" ]]; then
-    [[ -d "$repo_root/assets" && ! -L "$repo_root/assets" ]] || fail "Expected a regular source directory: assets"
-    for file in "$repo_root"/assets/*; do
-      [[ -e "$file" ]] || continue
-      [[ "$file" == "$repo_root/assets/rainbrand-logo.png" ]] || fail "Unexpected asset: ${file##*/}"
-    done
-  fi
-
-  # The active package must not carry prior presentation or connection data.
-  # The review recording remains on its immutable v1.1.2 release, so allow
-  # only that exact versioned URL while rejecting prior product branding.
-  for file in "${plugin_files[@]}"; do
-    awk -v allowed_url="$review_recording_url" '
-      {
-        text = tolower($0)
-        allowed = tolower(allowed_url)
-        while ((start = index(text, allowed)) > 0)
-          text = substr(text, 1, start - 1) substr(text, start + length(allowed))
-      }
-      text ~ /(^|[^a-z0-9])bloom([^a-z0-9]|$)|trybloom[.]ai/ { exit 1 }
-    ' "$repo_root/$file" || fail "Prior branding or endpoint in package source: $file"
-  done
-
-  # Read only the canonical frontmatter, with version under metadata. Accept
-  # plain, double-quoted, or single-quoted scalar values.
-  skill_metadata="$(awk -v quote="'" '
+read_skill_metadata() {
+  awk -v quote="'" -v expected_name="$2" -v expected_author="$3" -v expected_url="$4" '
     function scalar(text,    first) {
       first = substr(text, 1, 1)
       if (length(text) > 1 && (first == "\"" || first == quote) && substr(text, length(text)) == first)
@@ -102,14 +78,59 @@ validate_plugin_sources() {
       version = scalar(substr($0, 12))
       versions++
     }
-    metadata && /^  author: / { if (scalar(substr($0, 11)) != "Rainbrand") exit 1; authors++ }
-    metadata && /^  url: / { if (scalar(substr($0, 8)) != "https://docs.rainbrand.com/mcp/getting-started") exit 1; urls++ }
+    metadata && /^  author: / { if (scalar(substr($0, 11)) != expected_author) exit 1; authors++ }
+    metadata && /^  url: / { if (scalar(substr($0, 8)) != expected_url) exit 1; urls++ }
     END {
-      if (!closed || names != 1 || versions != 1 || descriptions != 1 || licenses != 1 || authors != 1 || urls != 1 || name == "" || version == "") exit 1
+      if (!closed || names != 1 || versions != 1 || descriptions != 1 || licenses != 1 || authors != 1 || urls != 1 || name != expected_name || version == "") exit 1
       print name
       print version
     }
-  ' "$repo_root/skills/rainbrand/SKILL.md")" || fail "Invalid Skill frontmatter (including the 200-character upload description limit)"
+  ' "$1" || fail "Invalid Skill frontmatter (including the 200-character upload description limit): $1"
+}
+
+validate_plugin_sources() {
+  local file skill_metadata skill_name skill_version release_version
+  local source_files=("${plugin_files[@]}")
+  # Portable drafts may still omit artwork. Native builds require the icon.
+  if [[ "${1:-}" == --claude ]]; then
+    source_files+=("${claude_plugin_files[@]}")
+    [[ -d "$repo_root/.claude-plugin" && ! -L "$repo_root/.claude-plugin" ]] || fail "Expected a regular source directory: .claude-plugin"
+  fi
+  for file in "${source_files[@]}"; do
+    [[ -f "$repo_root/$file" && ! -L "$repo_root/$file" ]] || fail "Missing regular source file: $file"
+  done
+  for file in skills skills/rainbrand; do
+    [[ -d "$repo_root/$file" && ! -L "$repo_root/$file" ]] || fail "Expected a regular source directory: $file"
+  done
+  for file in "$repo_root"/skills/*; do
+    [[ "$file" == "$repo_root/skills/rainbrand" ]] || fail "Expected only the Rainbrand Skill"
+  done
+  if [[ -e "$repo_root/assets" || -L "$repo_root/assets" ]]; then
+    [[ -d "$repo_root/assets" && ! -L "$repo_root/assets" ]] || fail "Expected a regular source directory: assets"
+    for file in "$repo_root"/assets/*; do
+      [[ -e "$file" ]] || continue
+      [[ "$file" == "$repo_root/assets/rainbrand-logo.png" ]] || fail "Unexpected asset: ${file##*/}"
+    done
+  fi
+
+  # The active package must not carry prior presentation or connection data.
+  # The review recording remains on its immutable v1.1.2 release, so allow
+  # only that exact versioned URL while rejecting prior product branding.
+  for file in "${source_files[@]}"; do
+    local allow_compatibility=0
+    if [[ "$file" == README.md || "$file" == CHANGELOG.md ]]; then
+      allow_compatibility=1
+    fi
+    awk -v profile=rainbrand -v allowed_url="$review_recording_url" \
+      -v allow_compatibility="$allow_compatibility" \
+      -f "$repo_root/scripts/validate-branding.awk" "$repo_root/$file" || \
+      fail "Unexpected branding or endpoint in package source: $file"
+  done
+
+  # Read only the canonical frontmatter, with version under metadata. Accept
+  # plain, double-quoted, or single-quoted scalar values.
+  skill_metadata="$(read_skill_metadata "$repo_root/skills/rainbrand/SKILL.md" rainbrand Rainbrand \
+    https://docs.rainbrand.com/mcp/getting-started)"
   skill_name="${skill_metadata%%$'\n'*}"
   skill_version="${skill_metadata#*$'\n'}"
   [[ "$skill_name" == rainbrand ]] || fail "Skill name must match its directory: rainbrand"
@@ -132,6 +153,12 @@ validate_plugin_sources() {
     -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/plugin.json"
   awk -v kind=mcp -v expected_name="$skill_name" \
     -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/mcp.json"
+  if [[ "${1:-}" == --claude ]]; then
+    awk -v kind=claude-plugin -v expected_name="$skill_name" -v expected_version="$skill_version" \
+      -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/.claude-plugin/plugin.json"
+    awk -v kind=claude-mcp -v expected_name="$skill_name" \
+      -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/.mcp.json"
+  fi
 }
 
 build_deterministic_zip() {
@@ -165,4 +192,23 @@ validate_zip_contents() {
     unzip -p "$archive" "$file" > "$validation_dir/member"
     cmp -s "$source_root/$file" "$validation_dir/member" || fail "Archive differs from source: $file"
   done
+}
+
+# Generate a transient branded variant; there is no second maintained Skill.
+render_bloom_skill() {
+  local source_root="$1" canonical_metadata bloom_metadata
+  mkdir -p "$source_root/bloom"
+  awk -f "$repo_root/scripts/brand-bloom-skill.awk" "$repo_root/skills/rainbrand/SKILL.md" > "$source_root/bloom/SKILL.md"
+  awk -v profile=bloom -f "$repo_root/scripts/validate-branding.awk" "$source_root/bloom/SKILL.md" || \
+    fail "Rainbrand identity remains in generated Bloom Skill"
+  canonical_metadata="$(read_skill_metadata "$repo_root/skills/rainbrand/SKILL.md" rainbrand Rainbrand https://docs.rainbrand.com/mcp/getting-started)"
+  bloom_metadata="$(read_skill_metadata "$source_root/bloom/SKILL.md" bloom Bloom https://docs.trybloom.ai/mcp/getting-started)"
+  [[ "${canonical_metadata#*$'\n'}" == "${bloom_metadata#*$'\n'}" ]] || fail "Bloom Skill version must match canonical Skill"
+}
+
+validate_skill_archives() {
+  local archive_dir="$1" validation_dir="$2"
+  validate_zip_contents "$archive_dir/rainbrand.skill.zip" "$repo_root/skills" "$validation_dir" "${skill_files[@]}"
+  render_bloom_skill "$validation_dir/bloom-source"
+  validate_zip_contents "$archive_dir/bloom.skill.zip" "$validation_dir/bloom-source" "$validation_dir" "${bloom_skill_files[@]}"
 }

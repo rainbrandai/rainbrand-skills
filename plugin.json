@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "rainbrand",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "Use Rainbrand to create and onboard brands, retrieve and update brand context, and work with the generation tools available to your account.",
   "author": {
     "name": "Rainbrand"
@@ -89,7 +89,7 @@
         "demo_recording_url": "https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4"
       },
       "publication": {
-        "release_notes": "Keeps the packaged Skill account-neutral, with stable brand workflows and connected-tool discovery. Live tools and schemas define available capabilities. Updates onboarding guidance and documents how the canonical source supplies both generated archives and Hero's matching copies."
+        "release_notes": "Adds a separate Claude-native plugin ZIP alongside the portable plugin and standalone Skill ZIPs. All three reuse the canonical Skill; installation instructions now identify the correct archive for each client. Skill guidance and the hosted MCP endpoint are unchanged."
       }
     }
   }

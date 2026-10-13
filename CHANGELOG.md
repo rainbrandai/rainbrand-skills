@@ -5,6 +5,37 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ## [Unreleased]
 
+## [1.1.8] - 2026-10-13
+
+### Added
+
+- Restore `bloom.skill.zip` as a Bloom compatibility standalone Skill archive,
+  generated from the canonical Skill with identity and domain substitutions.
+  Both standalone variants carry the same current guidance and version.
+- Package and validate both standalone archives as required release assets.
+- Add `rainbrand.claude-plugin.zip` as a separate Claude-native distribution,
+  with `.claude-plugin/plugin.json`, root `.mcp.json`, and the hosted Rainbrand
+  MCP endpoint using transport `http`.
+- Include the Rainbrand image in the native archive and reference it through
+  the manifest's top-level `icon`. This fixes a non-behavioral presentation
+  defect in the first native candidate.
+- Add deterministic native packaging and validation for closed manifest fields,
+  malformed MCP configs, exact archive members, Skill and image byte parity,
+  and reproducible builds.
+
+### Changed
+
+- Clarify provider-specific installation: Claude-native plugin, ChatGPT Plugins
+  Directory when listed, direct MCP for other clients or accounts without plugin
+  support, and standalone Skill as an optional advanced fallback.
+- Reserve portable/OpenAI ZIP upload/import for publishers, testers, and eligible
+  workspace admins. Document the Desktop-only restriction for imported MCP
+  plugins and the separate account authorization step after plugin installation.
+- Preserve the portable Agent Plugins 1.0 layout and standalone Skill archive.
+  All three distributions copy the single canonical Skill.
+- Bump Skill metadata to 1.1.8 to maintain package version invariants; Skill
+  guidance is unchanged.
+
 ## [1.1.7] - 2026-10-13
 
 ### Changed
