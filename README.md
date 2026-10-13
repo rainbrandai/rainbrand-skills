@@ -118,71 +118,6 @@ manifest is not required for this format. See
 [Cursor plugins](https://cursor.com/docs/reference/plugins) and
 [marketplace submission](https://cursor.com/marketplace/publish).
 
-## Optional public-directory publication
-
-Public-directory publication is separate from downloading and uploading the
-plugin to a ChatGPT workspace. The following material is included for a future
-directory submission; it is not required for workspace installation.
-
-The manifest supplies six positive cases and three negative cases for OpenAI
-review. Five positive cases are read-only; the onboarding case creates a brand.
-Tool names match the server's raw `tools/list` names: `list_brands`, `get_brand`,
-`get_account`, `list_workspaces`, `check_credits`, and `onboard_brand`.
-A client may qualify them with the server name, for example
-`mcp__rainbrand__list_brands`.
-
-Prepare a dedicated reviewer account with a sample Stripe brand and enough
-credits for one controlled onboarding run. Run the brand-list case before
-`get_brand` to supply the Stripe Brand session ID, and the workspace case
-before `check_credits` to supply the personal `workspace_id`. The personal-credit
-case expects only `check_credits`.
-
-Test onboarding in a conversation immediately after the account case:
-“Which Rainbrand account am I connected to?” followed by “onboard the shakeshack
-website please”. The client should discover `onboard_brand` from the connected
-Rainbrand catalog and call it with Shake Shack's official public website as the
-website source, even if the preceding turn loaded only `get_account`. Use the
-dedicated reviewer account and its default personal workspace for this write.
-Record any created Brand and remove it after the test. Check the returned result and follow the live
-tool contract until the brand is ready or the operation fails; do not claim
-completion from the initial call alone.
-
-The exchange-rate, Tokyo weather, and arithmetic cases must invoke no Rainbrand
-tools; the arithmetic answer is 42. The v1.1.2 walkthrough covers the original
-five read-only positive cases and three negative cases. It does not validate
-the new onboarding case. Run all nine prompts in each target client before
-claiming the updated package passes client testing. Put reviewer credentials
-and private instructions in the provider's review portal, never in this
-repository.
-
-Client regression testing should verify that agents discover the connected
-catalog, follow its current schemas, and use only exposed tools and fields.
-These controlled client checks remain pending for v1.1.7; package validation
-alone does not establish that the workflows pass.
-
-Before public submission:
-
-- The manifest includes `demo_recording_url` pointing to the
-  [Rainbrand walkthrough](https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4),
-  published with v1.1.2.
-- If OpenAI issues a new ownership challenge, serve the exact plain-text token
-  from the portal at the eligible Rainbrand HTTPS origin. Do not reuse an old
-  challenge token.
-- Check public website, support, and legal pages for the completed Rainbrand
-  rollout. Reachable pages alone do not establish that launch is complete.
-- Complete each provider's client tests, review requirements, and submission
-  process. Provider review determines whether these brand and design workflows
-  are accepted; the portable format is not universal approval.
-
-OpenAI's [submission guide](https://developers.openai.com/plugins/deploy/submission)
-and [review rules](https://developers.openai.com/plugins/deploy/app-review)
-describe this process. An MCP origin change requires a new submission rather
-than an update to the previous submission's origin.
-
-Earlier tags, releases, and assets remain unchanged. Use
-[`trybloomai/rainbrand-skills`](https://github.com/trybloomai/rainbrand-skills)
-in provider portals that require a repository URL.
-
 ## Update or remove
 
 ```bash
@@ -238,21 +173,6 @@ python3 scripts/test-validation.py
 These tests exercise malformed metadata, unsafe or mismatched archives,
 submission gates, and reproducible builds. Python 3 is required only for this
 test suite, not for package building or validation.
-
-## Keep Hero's copies in sync
-
-This repository owns the published Skill and its releases. The canonical source
-supplies both generated archives and Hero's identical copies for its installed
-agent Skill and hosted documentation. Hero records installation metadata in
-`skills-lock.json`. Its internal directory and lock key stay the same; Hero's
-synchronization check reports the exact paths and metadata to update.
-
-An edit can start in Hero. Prepare the matching change here, update the version,
-rebuild and validate both archives, then merge and release this repository
-first. Confirm that the released archives contain the canonical Skill bytes,
-then rerun Hero's synchronization check before merging its matching change.
-The check lives in Hero, reads this public source, and reports mismatches; it
-does not publish or modify this repository.
 
 ## License
 
