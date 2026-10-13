@@ -1,6 +1,6 @@
 ---
 name: rainbrand
-description: Use Rainbrand to create or onboard brands from websites, Instagram, or files, edit brands, get brand context, and use available generation tools. Not for unrelated work.
+description: Use Rainbrand to onboard and edit brands, get brand context for a task, and generate images, videos, audio, and SVGs.
 license: MIT
 metadata:
   author: Rainbrand
