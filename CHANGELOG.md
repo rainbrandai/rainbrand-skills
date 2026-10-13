@@ -9,6 +9,10 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ### Added
 
+- Restore `bloom.skill.zip` as a Bloom compatibility standalone Skill archive,
+  generated from the canonical Skill with identity and domain substitutions.
+  Both standalone variants carry the same current guidance and version.
+- Package and validate both standalone archives as required release assets.
 - Add `rainbrand.claude-plugin.zip` as a separate Claude-native distribution,
   with `.claude-plugin/plugin.json`, root `.mcp.json`, and the hosted Rainbrand
   MCP endpoint using transport `http`.

@@ -3,6 +3,7 @@
 
 import copy
 import json
+import os
 from pathlib import Path
 import shutil
 import stat
@@ -228,12 +229,10 @@ class PackageValidationTests(unittest.TestCase):
         self.run_script('package-skill.sh', succeeds=False)
 
     def test_reproducibility_and_exact_members(self):
-        import os
         before = {path.name: path.read_bytes() for path in (self.root / 'dist').glob('*.zip')}
         for timezone, mask in (('Pacific/Honolulu', '077'), ('Asia/Tokyo', '022')):
             environment = {**os.environ, 'TZ': timezone}
-            command = (f'umask {mask}; bash scripts/package-skill.sh && '
-                       'bash scripts/package-plugin.sh && bash scripts/package-claude-plugin.sh')
+            command = f'umask {mask}; bash scripts/package-release.sh'
             subprocess.run(['bash', '-c', command], cwd=self.root, env=environment,
                            check=True, capture_output=True)
             for name, contents in before.items():
@@ -244,6 +243,11 @@ class PackageValidationTests(unittest.TestCase):
             self.assertEqual(archive.namelist(), PLUGIN_MEMBERS)
         with zipfile.ZipFile(self.root / 'dist/rainbrand.skill.zip') as archive:
             self.assertEqual(archive.namelist(), ['rainbrand/SKILL.md'])
+        with zipfile.ZipFile(self.root / 'dist/bloom.skill.zip') as archive:
+            self.assertEqual(archive.namelist(), ['bloom/SKILL.md'])
+            member = archive.infolist()[0]
+            self.assertEqual(member.date_time, (1980, 1, 1, 0, 0, 0))
+            self.assertEqual(stat.S_IMODE(member.external_attr >> 16), 0o644)
         with zipfile.ZipFile(self.root / 'dist/rainbrand.claude-plugin.zip') as archive:
             self.assertEqual(archive.namelist(), CLAUDE_PLUGIN_MEMBERS)
             for member in archive.infolist():
@@ -377,6 +381,149 @@ class PackageValidationTests(unittest.TestCase):
         self.run_script('package-claude-plugin.sh', succeeds=False)
         path.symlink_to(target)
         self.run_script('package-claude-plugin.sh', succeeds=False)
+
+    def test_bloom_skill_identity_and_guidance_parity(self):
+        canonical = (self.root / 'skills/rainbrand/SKILL.md').read_bytes()
+        # Independent expected identity substitutions; compare every guidance byte.
+        expected = canonical
+        for before, after in (
+            (b'docs.rainbrand.com', b'docs.trybloom.ai'),
+            (b'www.rainbrand.com', b'www.trybloom.ai'),
+            (b'mcp.rainbrand.com', b'mcp.trybloom.ai'),
+            (b'Rainbrand', b'Bloom'), (b'rainbrand', b'bloom'),
+        ):
+            expected = expected.replace(before, after)
+        with zipfile.ZipFile(self.root / 'dist/bloom.skill.zip') as archive:
+            self.assertEqual(archive.namelist(), ['bloom/SKILL.md'])
+            bloom = archive.read('bloom/SKILL.md')
+        with zipfile.ZipFile(self.root / 'dist/rainbrand.skill.zip') as archive:
+            self.assertEqual(archive.read('rainbrand/SKILL.md'), canonical)
+        self.assertEqual(bloom, expected)
+        self.assertNotIn(b'rainbrand', bloom.lower())
+        self.assertNotIn(b'bloom', canonical.lower())
+        self.assertIn(b'name: bloom\n', bloom)
+        self.assertIn(b'  author: Bloom\n', bloom)
+        version_line = next(line for line in canonical.splitlines() if line.startswith(b'  version:'))
+        self.assertIn(version_line, bloom.splitlines())
+        self.assertIn(b'  version: "' + self.manifest['version'].encode() + b'"', bloom)
+        self.assertIn(b'When the task changes or a needed tool is not loaded', bloom)
+        self.assertIn(b'`onboard_brand`', bloom)
+        self.assertNotIn(b'generate_image_with_model', bloom)
+        self.assertFalse((self.root / 'skills/bloom').exists())
+        self.run_script('validate-skills.sh')
+
+    def test_bloom_endpoint_substitution_and_generated_metadata(self):
+        canonical_path = self.root / 'skills/rainbrand/SKILL.md'
+        canonical_path.write_text(canonical_path.read_text() + '\nRainbrand MCP: https://mcp.rainbrand.com/mcp\n')
+        self.run_script('package-skill.sh')
+        with zipfile.ZipFile(self.root / 'dist/bloom.skill.zip') as archive:
+            bloom = archive.read('bloom/SKILL.md')
+        self.assertIn(b'Bloom MCP: https://mcp.trybloom.ai/mcp', bloom)
+        renderer = self.root / 'scripts/brand-bloom-skill.awk'
+        original = renderer.read_text()
+        for mutation in ('    gsub(/Bloom/, "Rainbrand")\n',
+                         '    sub(/^  version:.*/, "  version: 9.9.9")\n'):
+            with self.subTest(mutation=mutation):
+                renderer.write_text(original.replace('    print\n', mutation + '    print\n'))
+                self.run_script('package-skill.sh', succeeds=False)
+
+    def test_branding_compatibility_prose_is_scoped(self):
+        readme = self.root / 'README.md'
+        original = readme.read_text()
+        prose = '\nFor Bloom compatibility, `bloom.skill.zip` contains `bloom/SKILL.md` with Bloom identity.\n'
+        readme.write_text(original + prose)
+        self.run_script('package-skill.sh')
+        for text in ('\nUse Bloom.\n', '\nhttps://mcp.trybloom.ai/mcp\n',
+                     '\nhttps://docs.trybloom.ai/\n'):
+            with self.subTest(text=text):
+                readme.write_text(original + text)
+                self.run_script('package-skill.sh', succeeds=False)
+        readme.write_text(original)
+        canonical_path = self.root / 'skills/rainbrand/SKILL.md'
+        canonical_path.write_text(canonical_path.read_text() + prose)
+        self.run_script('package-skill.sh', succeeds=False)
+
+    def test_bloom_corrupt_or_unexpected_archive_members(self):
+        path = self.root / 'dist/bloom.skill.zip'
+        with zipfile.ZipFile(path) as archive:
+            original_member = archive.infolist()[0]
+            original_data = archive.read(original_member)
+        for mutation in ('extra', 'duplicate', 'wrapper', 'wrong-name', 'changed',
+                         'symlink', 'traversal', 'stale-version', 'wrong-brand'):
+            with self.subTest(mutation=mutation):
+                member = copy.copy(original_member)
+                data = original_data
+                if mutation == 'wrapper':
+                    member.filename = 'wrapper/bloom/SKILL.md'
+                if mutation == 'wrong-name':
+                    member.filename = 'rainbrand/SKILL.md'
+                if mutation == 'changed':
+                    data = data.replace(b'`onboard_brand`', b'`old_tool`')
+                if mutation == 'stale-version':
+                    data = data.replace(self.manifest['version'].encode(), b'1.0.6')
+                if mutation == 'wrong-brand':
+                    data = data.replace(b'Bloom', b'Rainbrand')
+                if mutation == 'symlink':
+                    member.external_attr = (stat.S_IFLNK | 0o777) << 16
+                with warnings.catch_warnings(), zipfile.ZipFile(path, 'w') as archive:
+                    warnings.simplefilter('ignore', UserWarning)
+                    archive.writestr(member, data)
+                    if mutation == 'extra':
+                        archive.writestr('extra.txt', 'extra')
+                    if mutation == 'duplicate':
+                        archive.writestr(member, data)
+                    if mutation == 'traversal':
+                        archive.writestr('../outside', 'extra')
+                self.run_script('validate-skills.sh', succeeds=False)
+                self.run_script('validate-plugin.sh', succeeds=False)
+                self.run_script('validate-claude-plugin.sh', succeeds=False)
+        path.write_bytes(b'Not a ZIP')
+        self.run_script('validate-skills.sh', succeeds=False)
+
+    def test_release_requires_exact_asset_filenames(self):
+        expected = {'bloom.skill.zip', 'rainbrand.skill.zip',
+                    'rainbrand.plugin.zip', 'rainbrand.claude-plugin.zip'}
+        self.run_script('package-release.sh')
+        self.assertEqual({path.name for path in (self.root / 'dist').iterdir()}, expected)
+        bloom_path = self.root / 'dist/bloom.skill.zip'
+        bloom_path.rename(self.root / 'dist/Bloom.skill.zip')
+        self.run_script('validate-release.sh', succeeds=False)
+        self.run_script('validate-skills.sh', succeeds=False)
+        (self.root / 'dist/Bloom.skill.zip').unlink()
+        self.run_script('package-release.sh')
+        self.assertEqual({path.name for path in (self.root / 'dist').iterdir()}, expected)
+        (self.root / 'dist/unexpected.zip').write_bytes(b'Extra')
+        self.run_script('validate-release.sh', succeeds=False)
+
+    def test_release_download_urls_and_zip_validation(self):
+        fake_bin = Path(self.temp.name) / 'bin'
+        fake_bin.mkdir()
+        log = Path(self.temp.name) / 'curl-calls.jsonl'
+        curl = fake_bin / 'curl'
+        curl.write_text(
+            '#!/usr/bin/env python3\n'
+            'import json, os, sys\nfrom pathlib import Path\n'
+            'args = sys.argv[1:]\n'
+            'with open(os.environ["CURL_CALL_LOG"], "a") as log:\n'
+            '    log.write(json.dumps(args) + "\\n")\n'
+            'output = Path(args[args.index("--output") + 1])\n'
+            'output.write_bytes((Path(os.environ["RELEASE_FIXTURES"]) / output.name).read_bytes())\n'
+        )
+        curl.chmod(0o755)
+        environment = {**os.environ, 'PATH': str(fake_bin) + os.pathsep + os.environ['PATH'],
+                       'CURL_CALL_LOG': str(log), 'RELEASE_FIXTURES': str(self.root / 'dist')}
+        self.run_script('verify-release-downloads.sh', env=environment)
+        calls = [json.loads(line) for line in log.read_text().splitlines()]
+        self.assertEqual([call[-1] for call in calls], [
+            'https://github.com/trybloomai/rainbrand-skills/releases/latest/download/rainbrand.skill.zip',
+            'https://github.com/trybloomai/bloom-skills/releases/latest/download/bloom.skill.zip',
+        ])
+        for call in calls:
+            self.assertIn('--fail', call)
+            self.assertIn('--location', call)
+        # An HTTP success containing a bad ZIP must still fail verification.
+        (self.root / 'dist/bloom.skill.zip').write_bytes(b'Not a ZIP')
+        self.run_script('verify-release-downloads.sh', env=environment, succeeds=False)
 
 
 if __name__ == '__main__':

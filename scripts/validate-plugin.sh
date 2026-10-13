@@ -20,8 +20,7 @@ trap 'rm -rf "$validation_dir"' EXIT
 
 validate_zip_contents "$archive" "$repo_root" "$validation_dir" "${plugin_files[@]}"
 
-# Keep the existing Skill distribution aligned without rebuilding it.
-skill_archive="$repo_root/dist/rainbrand.skill.zip"
-validate_zip_contents "$skill_archive" "$repo_root/skills" "$validation_dir" "${skill_files[@]}"
+# Keep both standalone distributions aligned without rebuilding them.
+validate_skill_archives "$repo_root/dist" "$validation_dir"
 
 echo "Validated $archive"
