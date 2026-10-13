@@ -75,6 +75,11 @@ from `mcp.json`; a standalone Skill installation needs it configured separately.
 Complete Rainbrand sign-in, then let the client discover the live tools and
 their schemas. The live tool list determines what the connected account can use.
 
+The Skill is packaged before the consuming account is known. It provides stable
+guidance for discovery and brand work; the connected account's live tools,
+descriptions, and schemas define the available capabilities and how to use them.
+The package does not infer an account or contain account-specific workflows.
+
 For product information, support, and API integration guidance, use the
 [Rainbrand website](https://www.rainbrand.com/) and
 [FAQ](https://www.rainbrand.com/faq/). Before building an application or backend
@@ -113,52 +118,6 @@ manifest is not required for this format. See
 [Cursor plugins](https://cursor.com/docs/reference/plugins) and
 [marketplace submission](https://cursor.com/marketplace/publish).
 
-## Optional public-directory publication
-
-Public-directory publication is separate from downloading and uploading the
-plugin to a ChatGPT workspace. The following material is included for a future
-directory submission; it is not required for workspace installation.
-
-The manifest supplies five read-only positive cases and three negative cases
-for OpenAI review. Tool names match the server's raw `tools/list` names:
-`list_brands`, `get_brand`, `get_account`, `list_workspaces`, and `check_credits`.
-A client may qualify them with the server name, for example
-`mcp__rainbrand__list_brands`.
-
-Prepare a dedicated reviewer account with a sample Stripe brand. Run the
-positive cases in order in the same conversation: the first case supplies the
-Stripe Brand session ID for `get_brand`, and the workspace case supplies the
-personal `workspace_id` for `check_credits`. The personal-credit case expects
-only `check_credits`. The exchange-rate, Tokyo weather, and arithmetic cases
-must invoke no Rainbrand tools; the arithmetic answer is 42. Live connection,
-discovery, and calls to all five tools have passed. The walkthrough exercises
-all eight exact prompts with the dedicated reviewer account and Stripe brand.
-Put reviewer credentials and private instructions in the provider's review
-portal, never in this repository.
-
-Before public submission:
-
-- The manifest includes `demo_recording_url` pointing to the
-  [Rainbrand walkthrough](https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4),
-  published with v1.1.2.
-- If OpenAI issues a new ownership challenge, serve the exact plain-text token
-  from the portal at the eligible Rainbrand HTTPS origin. Do not reuse an old
-  challenge token.
-- Check public website, support, and legal pages for the completed Rainbrand
-  rollout. Reachable pages alone do not establish that launch is complete.
-- Complete each provider's client tests, review requirements, and submission
-  process. Provider review determines whether these brand and design workflows
-  are accepted; the portable format is not universal approval.
-
-OpenAI's [submission guide](https://developers.openai.com/plugins/deploy/submission)
-and [review rules](https://developers.openai.com/plugins/deploy/app-review)
-describe this process. An MCP origin change requires a new submission rather
-than an update to the previous submission's origin.
-
-Earlier tags, releases, and assets remain unchanged. Use
-[`trybloomai/rainbrand-skills`](https://github.com/trybloomai/rainbrand-skills)
-in provider portals that require a repository URL.
-
 ## Update or remove
 
 ```bash
@@ -170,8 +129,11 @@ Add `--global` for a global installation.
 
 ## Package and validate
 
-The canonical source is `skills/rainbrand/SKILL.md`. Build both archives and
-validate them in this order:
+The canonical source is `skills/rainbrand/SKILL.md` in this public repository.
+The builders generate `rainbrand.skill.zip` and `rainbrand.plugin.zip` from
+that source; each archive must contain the exact same Skill bytes. Do not edit
+an archive's copy independently. Build both archives and validate them in this
+order:
 
 ```bash
 scripts/package-skill.sh

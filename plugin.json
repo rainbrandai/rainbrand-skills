@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "rainbrand",
-  "version": "1.1.3",
-  "description": "The brand layer for agents.",
+  "version": "1.1.7",
+  "description": "Use Rainbrand to create and onboard brands, retrieve and update brand context, and work with the generation tools available to your account.",
   "author": {
     "name": "Rainbrand"
   },
@@ -14,16 +14,15 @@
       "interface": {
         "displayName": "Rainbrand",
         "shortDescription": "The brand layer for agents.",
-        "longDescription": "Rainbrand is the brand layer for agents. It turns a brand's identity, guidance, and assets into shared context that agents and products can use and update as the brand evolves.\n\nConnect your Rainbrand account to find accessible brands, retrieve their current context, and inspect account, workspace, and credit information. Versioned Brand Skills provide structured profiles, written guidance, and asset references for recurring brand work across connected systems.\n\nRainbrand also supports creating and updating brand context, brand-aware image generation, and selected image, video, audio, and SVG models. Connected agents and products can apply the same brand context to their own work.",
+        "longDescription": "Rainbrand is the brand layer for agents. It maintains a brand's identity, guidance, and assets as shared context that agents and products can use and update.\n\nConnect your Rainbrand account to create or onboard brands, retrieve their context, and prepare changes. A Brand Skill contains the versioned context for one brand; this plugin supplies general operating guidance and declares the Rainbrand connection.\n\nThe connected account's live tools, descriptions, and schemas define the capabilities available and how to use them. The packaged Skill provides stable guidance for discovery and brand work without assuming which capabilities an account has.",
         "developerName": "Rainbrand",
         "category": "Creativity",
         "capabilities": [
           "Brand context and Brand Skills",
-          "Brand creation and updates",
+          "Brand creation and onboarding",
+          "Brand context updates",
           "Account and workspace information",
-          "Workspace credit balances",
-          "Brand-aware image generation",
-          "Selected image, video, audio, and SVG models"
+          "Generation tools available to your account"
         ],
         "websiteURL": "https://www.rainbrand.com/",
         "supportURL": "https://www.rainbrand.com/faq/",
@@ -52,6 +51,12 @@
               "prompt": "Which Rainbrand account am I connected to?",
               "tools_triggered": "get_account",
               "expected_behavior": "Returns the authenticated account's email address and name."
+            },
+            {
+              "description": "Onboard a brand after account lookup, discovering the creation tool even when the preceding turn loaded only get_account. Run in a controlled reviewer account with credits.",
+              "prompt": "onboard the shakeshack website please",
+              "tools_triggered": "onboard_brand",
+              "expected_behavior": "Searches the connected Rainbrand tool catalog when onboard_brand is not loaded, then calls onboard_brand with Shake Shack's official public website as a website source, using the personal workspace by default. Does not treat the loaded tool subset as the full connection or replace connected tool discovery with browser-based docs lookup. Reports the actual result, follows the live tool contract for pending work or duplicate sources, and does not claim the brand is ready before verifying its state."
             },
             {
               "description": "List the workspaces accessible to the connected Rainbrand account.",
@@ -84,7 +89,7 @@
         "demo_recording_url": "https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4"
       },
       "publication": {
-        "release_notes": "Updates the Rainbrand icon, repository links, and ChatGPT workspace ZIP-upload instructions."
+        "release_notes": "Keeps the packaged Skill account-neutral, with stable brand workflows and connected-tool discovery. Live tools and schemas define available capabilities. Updates onboarding guidance and documents how the canonical source supplies both generated archives and Hero's matching copies."
       }
     }
   }

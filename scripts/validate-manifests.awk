@@ -191,7 +191,18 @@ END {
         exact(interface, "developerName", "Rainbrand")
         exact(interface, "category", "Creativity")
         required_string(interface, "longDescription", "longDescription", 4000)
-        string_array(member(interface, "capabilities", "array"), "capabilities", 20, 120)
+        capabilities = member(interface, "capabilities", "array")
+        string_array(capabilities, "capabilities", 20, 120)
+        expected_capabilities[1] = "Brand context and Brand Skills"
+        expected_capabilities[2] = "Brand creation and onboarding"
+        expected_capabilities[3] = "Brand context updates"
+        expected_capabilities[4] = "Account and workspace information"
+        expected_capabilities[5] = "Generation tools available to your account"
+        if (size[capabilities] != 5) abort("capabilities must contain exactly five entries")
+        for (i = 1; i <= size[capabilities]; i++) {
+            if (values[children[capabilities, i]] != expected_capabilities[i])
+                abort("Unexpected capability in position " i)
+        }
         exact(interface, "websiteURL", "https://www.rainbrand.com/")
         exact(interface, "supportURL", "https://www.rainbrand.com/faq/")
         exact(interface, "privacyPolicyURL", "https://www.rainbrand.com/privacy/")
@@ -213,13 +224,15 @@ END {
         closed(test_cases, "positive negative", "review.test_cases")
         positive = member(test_cases, "positive", "array")
         negative = member(test_cases, "negative", "array")
-        if (size[positive] != 5) abort("review.test_cases.positive must contain exactly five cases")
+        if (size[positive] != 6) abort("review.test_cases.positive must contain exactly six cases")
         if (size[negative] != 3) abort("review.test_cases.negative must contain exactly three cases")
         expected_tools[1] = "list_brands"
         expected_tools[2] = "get_brand"
         expected_tools[3] = "get_account"
-        expected_tools[4] = "list_workspaces"
-        expected_tools[5] = "check_credits"
+        expected_tools[4] = "onboard_brand"
+        expected_tools[5] = "list_workspaces"
+        expected_tools[6] = "check_credits"
+        expected_positive_prompts[4] = "onboard the shakeshack website please"
         expected_negative_prompts[1] = "What is the current USD/EUR exchange rate?"
         expected_negative_prompts[2] = "What is the weather in Tokyo today?"
         expected_negative_prompts[3] = "What is 17 + 25?"
@@ -231,6 +244,8 @@ END {
             required_string(item, "expected_behavior", "positive expected behavior", 0)
             if (required_string(item, "tools_triggered", "positive tools_triggered", 0) != expected_tools[i])
                 abort("Unexpected tools_triggered value in positive review case " i)
+            if (i in expected_positive_prompts && required_string(item, "prompt", "positive review prompt", 0) != expected_positive_prompts[i])
+                abort("Unexpected prompt in positive review case " i)
         }
         for (i = 1; i <= size[negative]; i++) {
             item = children[negative, i]

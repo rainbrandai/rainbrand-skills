@@ -116,8 +116,9 @@ class PackageValidationTests(unittest.TestCase):
 
     def test_review_contract_rejections(self):
         changes = [
-            ('positive', 4, 'tools_triggered', 'list_workspaces, check_credits'),
+            ('positive', 5, 'tools_triggered', 'list_workspaces, check_credits'),
             ('positive', 0, 'tools_triggered', 'rainbrand_list_brands'),
+            ('positive', 3, 'prompt', 'Onboard Shake Shack.'),
             ('negative', 2, 'prompt', 'What is 18 + 25?'),
         ]
         for group, index, field, value in changes:
@@ -195,6 +196,12 @@ class PackageValidationTests(unittest.TestCase):
         path.write_text(original)
         with zipfile.ZipFile(self.root / 'dist/rainbrand.skill.zip', 'a') as archive:
             archive.writestr('extra.txt', 'extra')
+        self.run_script('validate-plugin.sh', succeeds=False)
+
+    def test_archives_reject_stale_canonical_skill_content(self):
+        path = self.root / 'skills/rainbrand/SKILL.md'
+        original = path.read_text()
+        path.write_text(original + '\nCanonical content changed.\n')
         self.run_script('validate-plugin.sh', succeeds=False)
 
     def test_source_symlinks_and_extra_skills(self):
