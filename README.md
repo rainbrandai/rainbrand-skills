@@ -28,11 +28,6 @@ In ChatGPT on the web:
 3. Upload `rainbrand.plugin.zip` and configure workspace access.
 4. Authorize the Rainbrand connection when prompted.
 
-You need an eligible workspace and permission to upload plugins, typically as
-a workspace owner or admin. This path does not require a marketplace or an
-OpenAI public-directory submission. To update the plugin, download the latest
-ZIP and upload it again. See [OpenAI plugin management](https://learn.chatgpt.com/docs/enterprise/plugin-management).
-
 ### Standalone Skill
 
 From this checkout, install the Skill in the current project:
