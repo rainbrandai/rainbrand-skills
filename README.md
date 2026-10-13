@@ -75,16 +75,10 @@ from `mcp.json`; a standalone Skill installation needs it configured separately.
 Complete Rainbrand sign-in, then let the client discover the live tools and
 their schemas. The live tool list determines what the connected account can use.
 
-The Skill follows that catalog and the live `generate_image` schema. Managed
-image generation applies brand styling automatically and returns image IDs;
-Model Gateway generation uses a selected model and model input, with generation
-IDs for checking progress. The managed catalog includes image editing,
-resizing, background removal, and vectorization. The Model Gateway catalog
-instead includes model discovery and image, video, and audio generation.
-
-Brief and Review tools are independently enabled. Use them only when present,
-and pass `brief_id` only when the live image-generation schema supports it.
-The current MCP Model Gateway catalog does not include SVG generation.
+The Skill is packaged before the consuming account is known. It provides stable
+guidance for discovery and brand work; the connected account's live tools,
+descriptions, and schemas define the available capabilities and how to use them.
+The package does not infer an account or contain account-specific workflows.
 
 For product information, support, and API integration guidance, use the
 [Rainbrand website](https://www.rainbrand.com/) and
@@ -161,11 +155,10 @@ claiming the updated package passes client testing. Put reviewer credentials
 and private instructions in the provider's review portal, never in this
 repository.
 
-Generation regression testing must cover both managed and Model Gateway
-catalogs, with Briefs and Reviews independently present or absent. Check that
-the agent uses the matching inputs and status tools and does not call missing
-capabilities. These controlled client checks remain pending for v1.1.7;
-package validation alone does not establish that the workflows pass.
+Client regression testing should verify that agents discover the connected
+catalog, follow its current schemas, and use only exposed tools and fields.
+These controlled client checks remain pending for v1.1.7; package validation
+alone does not establish that the workflows pass.
 
 Before public submission:
 
@@ -201,8 +194,11 @@ Add `--global` for a global installation.
 
 ## Package and validate
 
-The canonical source is `skills/rainbrand/SKILL.md`. Build both archives and
-validate them in this order:
+The canonical source is `skills/rainbrand/SKILL.md` in this public repository.
+The builders generate `rainbrand.skill.zip` and `rainbrand.plugin.zip` from
+that source; each archive must contain the exact same Skill bytes. Do not edit
+an archive's copy independently. Build both archives and validate them in this
+order:
 
 ```bash
 scripts/package-skill.sh
@@ -245,14 +241,16 @@ test suite, not for package building or validation.
 
 ## Keep Hero's copies in sync
 
-This repository owns the published Skill and its releases. Hero keeps identical
-copies for its installed agent Skill and hosted documentation, with installation
-metadata in `skills-lock.json`. Its internal directory and lock key stay the
-same; Hero's synchronization check reports the exact paths and metadata to update.
+This repository owns the published Skill and its releases. The canonical source
+supplies both generated archives and Hero's identical copies for its installed
+agent Skill and hosted documentation. Hero records installation metadata in
+`skills-lock.json`. Its internal directory and lock key stay the same; Hero's
+synchronization check reports the exact paths and metadata to update.
 
 An edit can start in Hero. Prepare the matching change here, update the version,
 rebuild and validate both archives, then merge and release this repository
-first. Rerun Hero's synchronization check before merging its matching change.
+first. Confirm that the released archives contain the canonical Skill bytes,
+then rerun Hero's synchronization check before merging its matching change.
 The check lives in Hero, reads this public source, and reports mismatches; it
 does not publish or modify this repository.
 

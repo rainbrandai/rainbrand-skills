@@ -14,22 +14,20 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
   connection; public docs remain reference material.
 - Route brand creation and onboarding from websites, Instagram, or files to
   `onboard_brand`, with a controlled review case after account lookup.
-- Choose the generation workflow from the live catalog and `generate_image`
-  schema: managed image generation applies brand styling and returns image IDs;
-  Model Gateway generation uses model input and generation IDs.
-- Make Brief and Review guidance conditional on their independent availability,
-  and use `brief_id` only when the live schema supports it.
-- Distinguish managed image editing and transformations from Model Gateway
-  image, video, and audio tools. Remove claims of current MCP SVG generation.
+- Keep the packaged Skill account-neutral: stable product context, connected
+  discovery, and universal brand workflows. The live tools, descriptions, and
+  schemas own available capabilities and their execution instructions.
+- Keep plugin descriptions capability-neutral. Packaging does not infer the
+  consuming account or encode account-specific generation workflows.
 - Document the six positive review cases, three negative cases, and the release
   order for keeping Hero's Skill copies aligned with this public source.
-- Rebuild both distribution archives with the updated Skill and plugin metadata.
+- Generate both distribution archives from the canonical Skill and validate
+  exact Skill-byte agreement across the source, archives, and Hero mirrors.
 
 ### Validation pending
 
-- Controlled client regression testing for onboarding, both generation catalogs,
-  and independently available Brief and Review tools remains pending. Package
-  validation does not establish client behavior.
+- Controlled client regression testing for onboarding and use of the connected
+  catalog remains pending. Package validation does not establish client behavior.
 
 ## [1.1.3] - 2026-10-13
 
