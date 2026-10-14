@@ -45,9 +45,7 @@ To install the Rainbrand Skill without the MCP connection:
 npx skills add trybloomai/rainbrand-skills --skill rainbrand
 ```
 
-You can also download [`rainbrand.skill.zip`](dist/rainbrand.skill.zip). The
-[`bloom.skill.zip`](dist/bloom.skill.zip) archive is available for existing
-installations.
+You can also download [`rainbrand.skill.zip`](dist/rainbrand.skill.zip).
 
 Learn more on the [Rainbrand website](https://www.rainbrand.com/), read the
 [FAQ](https://www.rainbrand.com/faq/), or see the

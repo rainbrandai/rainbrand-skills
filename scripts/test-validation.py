@@ -481,8 +481,10 @@ class PackageValidationTests(unittest.TestCase):
 
     def test_readme_names_only_supported_distributions(self):
         readme = (self.root / 'README.md').read_text()
-        for asset in EXPECTED_RELEASE_ASSETS:
+        customer_assets = EXPECTED_RELEASE_ASSETS - {'bloom.skill.zip'}
+        for asset in customer_assets:
             self.assertIn(asset, readme)
+        self.assertNotIn('bloom.skill.zip', readme)
         self.assertNotIn('rainbrand.plugin.zip', readme)
         self.assertNotIn('Portable plugin', readme)
         self.assertNotIn('Agent Plugins 1.0', readme)
