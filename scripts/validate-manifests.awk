@@ -292,6 +292,8 @@ END {
             closed(server, "type url", "Rainbrand MCP server")
             exact(server, "type", "http")
         }
-        exact(server, "url", "https://mcp.rainbrand.com/mcp")
+        endpoint = required_string(server, "url", "MCP endpoint", 2048)
+        if (endpoint !~ /^https:\/\/[^\/?#[:space:]@\\]+([\/?#][^[:space:]\\]*)?$/)
+            abort("MCP endpoint must be an HTTPS URL without whitespace or credentials")
     } else abort("Unknown validation profile")
 }

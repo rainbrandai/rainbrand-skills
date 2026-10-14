@@ -59,6 +59,7 @@ class PackageValidationTests(unittest.TestCase):
             for provider, spec in PLUGIN_SPECS.items()
         }
         self.plugin_copy = json.loads((self.root / 'plugin-copy.json').read_text())
+        self.plugin_config = json.loads((self.root / 'plugin-config.json').read_text())
         self.codex_mcp = json.loads((self.root / '.mcp.json').read_text())
         self.native_mcp = json.loads((self.root / 'mcp.json').read_text())
         self.run_script('package-release.sh')
@@ -163,6 +164,27 @@ class PackageValidationTests(unittest.TestCase):
             manifest = json.loads((self.root / spec['manifest']).read_text())
             self.assertEqual(manifest['description'], replacement)
 
+    def test_mcp_outputs_share_one_endpoint_source(self):
+        endpoint = self.plugin_config['mcp']['endpoint']
+        validator = (self.root / 'scripts/validate-manifests.awk').read_text()
+        self.assertNotIn(endpoint, validator)
+        self.assertEqual(
+            self.codex_mcp['mcpServers']['rainbrand']['url'], endpoint)
+        self.assertEqual(
+            self.native_mcp['mcpServers']['rainbrand']['url'], endpoint)
+
+        changed_config = copy.deepcopy(self.plugin_config)
+        changed_config['mcp']['endpoint'] = 'https://mcp.example.com/mcp'
+        self.write_json('plugin-config.json', changed_config)
+        self.run_renderer('--check', succeeds=False)
+        self.run_script('package-codex-plugin.sh')
+        for path in ('.mcp.json', 'mcp.json'):
+            generated = json.loads((self.root / path).read_text())
+            self.assertEqual(
+                generated['mcpServers']['rainbrand']['url'],
+                changed_config['mcp']['endpoint'],
+            )
+
     def test_codex_submission_metadata_contract(self):
         manifest = self.manifests['codex']
         changes = []
@@ -237,7 +259,7 @@ class PackageValidationTests(unittest.TestCase):
         for changed in codex_changes:
             with self.subTest(changed=changed):
                 self.write_json('.mcp.json', changed)
-                self.run_script('package-codex-plugin.sh', succeeds=False)
+                self.run_script('validate-codex-plugin.sh', succeeds=False)
                 self.write_json('.mcp.json', self.codex_mcp)
 
         native_server = self.native_mcp['mcpServers']['rainbrand']
@@ -252,13 +274,14 @@ class PackageValidationTests(unittest.TestCase):
         for changed in native_changes:
             with self.subTest(changed=changed):
                 self.write_json('mcp.json', changed)
-                self.run_script('package-claude-plugin.sh', succeeds=False)
-                self.run_script('package-cursor-plugin.sh', succeeds=False)
+                self.run_script('validate-claude-plugin.sh', succeeds=False)
+                self.run_script('validate-cursor-plugin.sh', succeeds=False)
                 self.write_json('mcp.json', self.native_mcp)
 
         codex_url = self.codex_mcp['mcpServers']['rainbrand']['url']
         native_url = self.native_mcp['mcpServers']['rainbrand']['url']
         self.assertEqual(codex_url, native_url)
+        self.assertEqual(codex_url, self.plugin_config['mcp']['endpoint'])
 
     def test_root_portable_manifest_is_retired(self):
         self.assertFalse((self.root / 'plugin.json').exists())

@@ -113,6 +113,7 @@ render_plugin_manifests() {
   require_commands python3
   validate_source_file skills/rainbrand/SKILL.md
   validate_source_file plugin-copy.json
+  validate_source_file plugin-config.json
   validate_source_file scripts/render-plugin-manifests.py
   python3 "$repo_root/scripts/render-plugin-manifests.py" --write
 }
@@ -166,6 +167,7 @@ validate_plugin_sources() {
   validate_shared_sources
   require_commands od tr python3
   validate_source_file plugin-copy.json
+  validate_source_file plugin-config.json
   validate_source_file scripts/render-plugin-manifests.py
   validate_source_directory assets rainbrand-logo.png
   validate_source_directory .codex-plugin plugin.json
@@ -204,7 +206,7 @@ validate_plugin_sources() {
     *) fail "Unknown plugin provider: $provider" ;;
   esac
 
-  validate_rainbrand_branding plugin-copy.json "$manifest_file" "$mcp_file"
+  validate_rainbrand_branding plugin-copy.json plugin-config.json "$manifest_file" "$mcp_file"
   python3 "$repo_root/scripts/render-plugin-manifests.py" --check
   skill_metadata="$(read_skill_metadata "$repo_root/skills/rainbrand/SKILL.md" rainbrand Rainbrand \
     https://docs.rainbrand.com/mcp/getting-started)"

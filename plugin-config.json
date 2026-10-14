@@ -1,0 +1,6 @@
+{
+  "mcp": {
+    "name": "rainbrand",
+    "endpoint": "https://mcp.rainbrand.com/mcp"
+  }
+}

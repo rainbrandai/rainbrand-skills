@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Render provider manifests from canonical Skill metadata and plugin copy."""
+"""Render provider manifests and MCP configs from canonical package sources."""
 
 import argparse
 import json
@@ -11,10 +11,13 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 SKILL_PATH = ROOT / 'skills/rainbrand/SKILL.md'
 COPY_PATH = ROOT / 'plugin-copy.json'
-MANIFEST_PATHS = {
+CONFIG_PATH = ROOT / 'plugin-config.json'
+OUTPUT_PATHS = {
     'codex': ROOT / '.codex-plugin/plugin.json',
     'claude': ROOT / '.claude-plugin/plugin.json',
     'cursor': ROOT / '.cursor-plugin/plugin.json',
+    'codex-mcp': ROOT / '.mcp.json',
+    'native-mcp': ROOT / 'mcp.json',
 }
 
 
@@ -71,12 +74,14 @@ def read_skill_metadata():
     return metadata
 
 
-def build_manifests():
+def build_outputs():
     skill = read_skill_metadata()
     copy = read_json(COPY_PATH)
+    config = read_json(CONFIG_PATH)
     shared = copy['shared']
     codex = copy['codex']
     cursor = copy['cursor']
+    mcp = config['mcp']
 
     author = {'name': skill['author'], 'url': shared['homepage']}
     identity = {
@@ -151,10 +156,28 @@ def build_manifests():
         'mcpServers': './mcp.json',
     }
 
+    codex_mcp = {
+        'mcpServers': {
+            mcp['name']: {
+                'url': mcp['endpoint'],
+            },
+        },
+    }
+    native_mcp = {
+        'mcpServers': {
+            mcp['name']: {
+                'type': 'http',
+                'url': mcp['endpoint'],
+            },
+        },
+    }
+
     return {
         'codex': codex_manifest,
         'claude': claude_manifest,
         'cursor': cursor_manifest,
+        'codex-mcp': codex_mcp,
+        'native-mcp': native_mcp,
     }
 
 
@@ -165,28 +188,28 @@ def render(manifest):
 def main():
     parser = argparse.ArgumentParser()
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument('--check', action='store_true', help='fail if generated manifests are stale')
-    mode.add_argument('--write', action='store_true', help='rewrite generated provider manifests')
+    mode.add_argument('--check', action='store_true', help='fail if generated plugin files are stale')
+    mode.add_argument('--write', action='store_true', help='rewrite generated provider files')
     args = parser.parse_args()
     check = not args.write
 
     stale = []
-    for provider, manifest in build_manifests().items():
-        path = MANIFEST_PATHS[provider]
-        expected = render(manifest)
+    for output, document in build_outputs().items():
+        path = OUTPUT_PATHS[output]
+        expected = render(document)
         if check:
             if not path.is_file() or path.read_text() != expected:
                 stale.append(path.relative_to(ROOT))
         else:
             if path.parent.is_symlink() or not path.parent.is_dir():
-                raise ValueError(f'Expected a regular manifest directory: {path.parent}')
+                raise ValueError(f'Expected a regular output directory: {path.parent}')
             if path.is_symlink() or (path.exists() and not path.is_file()):
-                raise ValueError(f'Expected a regular manifest file: {path}')
+                raise ValueError(f'Expected a regular output file: {path}')
             path.write_text(expected)
 
     if stale:
         names = ', '.join(map(str, stale))
-        print(f'Generated plugin manifest is stale: {names}', file=sys.stderr)
+        print(f'Generated plugin file is stale: {names}', file=sys.stderr)
         print('Run: python3 scripts/render-plugin-manifests.py --write', file=sys.stderr)
         return 1
     return 0
