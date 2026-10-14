@@ -5,6 +5,8 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ## [Unreleased]
 
+## [1.1.9] - 2026-10-14
+
 ### Added
 
 - Add provider-native Codex/OpenAI and Cursor plugin archives alongside the
