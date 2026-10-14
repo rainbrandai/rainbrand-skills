@@ -11,6 +11,7 @@ for file in "$repo_root"/dist/*; do
   printf '%s\n' "${file##*/}"
 done | sort > "$validation_dir/actual"
 cmp -s "$validation_dir/expected" "$validation_dir/actual" || fail "Release must contain exactly: ${release_files[*]}"
-"$repo_root/scripts/validate-plugin.sh"
+"$repo_root/scripts/validate-codex-plugin.sh"
 "$repo_root/scripts/validate-claude-plugin.sh"
+"$repo_root/scripts/validate-cursor-plugin.sh"
 echo "Validated release assets: ${release_files[*]}"

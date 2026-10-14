@@ -4,8 +4,9 @@ set -euo pipefail
 export LC_ALL=C
 
 source "$(dirname "${BASH_SOURCE[0]}")/plugin-common.sh"
-require_commands awk zip unzip cmp sort mktemp
-validate_plugin_sources --claude
+require_commands awk zip unzip cmp sort mktemp od tr
+render_plugin_manifests
+validate_plugin_sources claude
 
 package_dir="$(mktemp -d "${TMPDIR:-/tmp}/rainbrand-claude-plugin.XXXXXX")"
 trap 'rm -rf "$package_dir"' EXIT

@@ -1,0 +1,107 @@
+{
+  "shared": {
+    "displayName": "Rainbrand",
+    "homepage": "https://www.rainbrand.com/",
+    "repository": "https://github.com/trybloomai/rainbrand-skills",
+    "supportUrl": "https://www.rainbrand.com/faq/",
+    "privacyPolicyUrl": "https://www.rainbrand.com/privacy/",
+    "termsOfServiceUrl": "https://www.rainbrand.com/terms/"
+  },
+  "codex": {
+    "keywords": [
+      "rainbrand",
+      "brand",
+      "branding",
+      "creative"
+    ],
+    "interface": {
+      "shortDescription": "The brand layer for agents.",
+      "longDescription": "Rainbrand is the brand layer for agents. It maintains a brand's identity, guidance, and assets as shared context that agents and products can use and update.\n\nConnect your Rainbrand account to create or onboard brands, retrieve their context, and prepare changes. A Brand Skill contains the versioned context for one brand; this plugin supplies general operating guidance and declares the Rainbrand connection.\n\nThe connected account's live tools, descriptions, and schemas define the capabilities available and how to use them. The packaged Skill provides stable guidance for discovery and brand work without assuming which capabilities an account has.",
+      "category": "Creativity",
+      "capabilities": [
+        "Brand context and Brand Skills",
+        "Brand creation and onboarding",
+        "Brand context updates",
+        "Account and workspace information",
+        "Generation tools available to your account"
+      ],
+      "defaultPrompt": [
+        "Show me the brands I can access.",
+        "Onboard my brand from its website.",
+        "Get the current context for my brand."
+      ]
+    },
+    "review": {
+      "test_cases": {
+        "positive": [
+          {
+            "description": "List the brands accessible to the connected Rainbrand account.",
+            "prompt": "Show me the brands I can access in Rainbrand.",
+            "tools_triggered": "list_brands",
+            "expected_behavior": "Returns accessible brands with their names, statuses, workspaces, and Brand session IDs."
+          },
+          {
+            "description": "Retrieve the current brand context for an existing Stripe brand, using its Brand session ID from the preceding brand-list case.",
+            "prompt": "Get the current brand context for my Stripe brand in Rainbrand.",
+            "tools_triggered": "get_brand",
+            "expected_behavior": "Uses the known Stripe Brand session ID to return the accessible brand's current status, profile, root guidance, navigation, files, and version metadata."
+          },
+          {
+            "description": "Onboard a brand, discovering the creation tool even when it is not initially loaded. Run in a controlled reviewer account with credits.",
+            "prompt": "onboard the shakeshack website please",
+            "tools_triggered": "onboard_brand",
+            "expected_behavior": "Searches the connected Rainbrand tool catalog when onboard_brand is not loaded, then calls onboard_brand with Shake Shack's official public website as a website source, using the personal workspace by default. Does not treat the loaded tool subset as the full connection or replace connected tool discovery with browser-based docs lookup. Reports the actual result, follows the live tool contract for pending work or duplicate sources, and does not claim the brand is ready before verifying its state."
+          },
+          {
+            "description": "List the workspaces accessible to the connected Rainbrand account.",
+            "prompt": "Which Rainbrand workspaces can I access?",
+            "tools_triggered": "list_workspaces",
+            "expected_behavior": "Returns the personal workspace first, followed by other accessible workspaces, with their IDs and names."
+          },
+          {
+            "description": "Check the remaining credits in the account's personal workspace, using its workspace ID from the preceding workspace-list case.",
+            "prompt": "How many Rainbrand credits are left in my personal workspace?",
+            "tools_triggered": "check_credits",
+            "expected_behavior": "Calls only check_credits with the known personal workspace ID and returns the workspace name, credit balance, and unlimited or paused status as applicable."
+          }
+        ],
+        "negative": [
+          {
+            "description": "Answer a currency exchange question without running any Rainbrand tools.",
+            "prompt": "What is the current USD/EUR exchange rate?"
+          },
+          {
+            "description": "Answer a weather question without running any Rainbrand tools.",
+            "prompt": "What is the weather in Tokyo today?"
+          },
+          {
+            "description": "Answer a basic arithmetic question without running any Rainbrand tools.",
+            "prompt": "What is 17 + 25?"
+          }
+        ]
+      },
+      "demo_recording_url": "https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4",
+      "commerce": false,
+      "commerce_description": "Rainbrand does not sell products or process payments through this plugin."
+    },
+    "publication": {
+      "release_notes": "Replaces the portable root package with provider-native Codex/OpenAI, Claude, and Cursor distributions. The canonical Skill and hosted MCP endpoint are unchanged."
+    }
+  },
+  "cursor": {
+    "minimumVersion": "3.13.0",
+    "keywords": [
+      "rainbrand",
+      "brand",
+      "branding",
+      "creative",
+      "mcp"
+    ],
+    "category": "integrations",
+    "tags": [
+      "branding",
+      "creative",
+      "mcp"
+    ]
+  }
+}

@@ -7,7 +7,12 @@ source "$(dirname "${BASH_SOURCE[0]}")/plugin-common.sh"
 require_commands curl mktemp
 download_dir="$(mktemp -d "${TMPDIR:-/tmp}/rainbrand-release-downloads.XXXXXX")"
 trap 'rm -rf "$download_dir"' EXIT
-for asset in rainbrand.skill.zip bloom.skill.zip; do
+for asset in \
+  rainbrand.skill.zip \
+  rainbrand.codex-plugin.zip \
+  rainbrand.claude-plugin.zip \
+  rainbrand.cursor-plugin.zip \
+  bloom.skill.zip; do
   if [[ "$asset" == bloom.skill.zip ]]; then
     repository=bloom-skills
   else
@@ -19,3 +24,6 @@ for asset in rainbrand.skill.zip bloom.skill.zip; do
   echo "Downloaded $url (followed redirects)"
 done
 "$repo_root/scripts/validate-skills.sh" "$download_dir"
+"$repo_root/scripts/validate-codex-plugin.sh" "$download_dir/rainbrand.codex-plugin.zip"
+"$repo_root/scripts/validate-claude-plugin.sh" "$download_dir/rainbrand.claude-plugin.zip"
+"$repo_root/scripts/validate-cursor-plugin.sh" "$download_dir/rainbrand.cursor-plugin.zip"

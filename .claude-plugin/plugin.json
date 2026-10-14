@@ -1,12 +1,18 @@
 {
   "name": "rainbrand",
+  "displayName": "Rainbrand",
   "version": "1.1.8",
-  "description": "Use Rainbrand to create and onboard brands, retrieve and update brand context, and work with the generation tools available to your account.",
+  "description": "Use Rainbrand to onboard and edit brands, get brand context for a task, and generate images, videos, and audio.",
   "author": {
-    "name": "Rainbrand"
+    "name": "Rainbrand",
+    "url": "https://www.rainbrand.com/"
   },
   "homepage": "https://www.rainbrand.com/",
   "repository": "https://github.com/trybloomai/rainbrand-skills",
   "license": "MIT",
-  "icon": "./assets/rainbrand-logo.png"
+  "icon": "./assets/rainbrand-logo.png",
+  "documentationUrl": "https://docs.rainbrand.com/mcp/getting-started",
+  "supportUrl": "https://www.rainbrand.com/faq/",
+  "privacyPolicyUrl": "https://www.rainbrand.com/privacy/",
+  "termsOfServiceUrl": "https://www.rainbrand.com/terms/"
 }

@@ -4,7 +4,7 @@ set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/plugin-common.sh"
 require_commands awk zip unzip cmp sort mktemp
-validate_plugin_sources
+validate_shared_sources
 package_dir="$(mktemp -d "${TMPDIR:-/tmp}/rainbrand-skill.XXXXXX")"
 candidate="$package_dir/rainbrand.skill.zip"
 archive="$repo_root/dist/rainbrand.skill.zip"
