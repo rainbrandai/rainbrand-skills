@@ -93,16 +93,19 @@ class PackageValidationTests(unittest.TestCase):
             'codex': [
                 ('version', '9.9.9'), ('name', 'other'), ('skills', './other/'),
                 ('mcpServers', './mcp.json'), ('repository', 'https://example.com/repo'),
+                ('description', 'Different plugin copy.'),
             ],
             'claude': [
                 ('version', '9.9.9'), ('name', 'other'), ('displayName', ''),
                 ('icon', './other.png'), ('repository', False),
+                ('description', 'Different plugin copy.'),
             ],
             'cursor': [
                 ('version', '9.9.9'), ('name', 'other'), ('skills', './other/'),
                 ('mcpServers', './.mcp.json'), ('category', 'other'),
                 ('logo', './assets/rainbrand-logo.png'),
                 ('minClientVersions', {'cursor': '0.0.0'}),
+                ('description', 'Different plugin copy.'),
             ],
         }
         for provider, changes in mutations.items():
@@ -344,8 +347,12 @@ class PackageValidationTests(unittest.TestCase):
     def test_skill_description_keeps_correct_media_scope(self):
         skill = (self.root / 'skills/rainbrand/SKILL.md').read_text()
         description = next(line for line in skill.splitlines() if line.startswith('description: '))
+        description = description.split(': ', 1)[1]
         self.assertIn('images, videos, and audio', description)
         self.assertNotIn('SVG', description)
+        for provider, manifest in self.manifests.items():
+            with self.subTest(provider=provider):
+                self.assertEqual(manifest['description'], description)
 
     def test_branding_compatibility_prose_is_scoped(self):
         readme = self.root / 'README.md'

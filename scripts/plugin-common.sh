@@ -63,6 +63,9 @@ validate_regular_zip_members() {
   ' || fail "Archive members must be regular files: $1"
 }
 
+# Skill frontmatter is the canonical source for shared package identity and
+# description. Provider manifests repeat those values only because each format
+# requires them; validation below rejects any copy that drifts.
 read_skill_metadata() {
   awk -v quote="'" -v expected_name="$2" -v expected_author="$3" -v expected_url="$4" '
     function scalar(text,    first) {
@@ -89,8 +92,7 @@ read_skill_metadata() {
     metadata && /^  url: / { if (scalar(substr($0, 8)) != expected_url) exit 1; urls++ }
     END {
       if (!closed || names != 1 || versions != 1 || descriptions != 1 || licenses != 1 || authors != 1 || urls != 1 || name != expected_name || version == "") exit 1
-      print name
-      print version
+      print name "\t" version "\t" description
     }
   ' "$1" || fail "Invalid Skill frontmatter (including the 200-character upload description limit): $1"
 }
@@ -123,7 +125,7 @@ validate_rainbrand_branding() {
 }
 
 validate_shared_sources() {
-  local file skill_metadata skill_name skill_version release_version
+  local file skill_metadata skill_name skill_version skill_description release_version
   for file in skills/rainbrand/SKILL.md README.md CHANGELOG.md LICENSE; do
     validate_source_file "$file"
   done
@@ -138,8 +140,7 @@ validate_shared_sources() {
   validate_rainbrand_branding skills/rainbrand/SKILL.md README.md CHANGELOG.md LICENSE
   skill_metadata="$(read_skill_metadata "$repo_root/skills/rainbrand/SKILL.md" rainbrand Rainbrand \
     https://docs.rainbrand.com/mcp/getting-started)"
-  skill_name="${skill_metadata%%$'\n'*}"
-  skill_version="${skill_metadata#*$'\n'}"
+  IFS=$'\t' read -r skill_name skill_version skill_description <<< "$skill_metadata"
   [[ "$skill_name" == rainbrand ]] || fail "Skill name must match its directory: rainbrand"
   [[ "$skill_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || fail "Expected a stable semantic Skill version"
 
@@ -155,7 +156,7 @@ validate_shared_sources() {
 }
 
 validate_plugin_sources() {
-  local provider="$1" manifest_kind manifest_file mcp_kind mcp_file skill_metadata skill_name skill_version
+  local provider="$1" manifest_kind manifest_file mcp_kind mcp_file skill_metadata skill_name skill_version skill_description
   validate_shared_sources
   require_commands od tr
   validate_source_directory assets rainbrand-logo.png
@@ -198,9 +199,9 @@ validate_plugin_sources() {
   validate_rainbrand_branding "$manifest_file" "$mcp_file"
   skill_metadata="$(read_skill_metadata "$repo_root/skills/rainbrand/SKILL.md" rainbrand Rainbrand \
     https://docs.rainbrand.com/mcp/getting-started)"
-  skill_name="${skill_metadata%%$'\n'*}"
-  skill_version="${skill_metadata#*$'\n'}"
+  IFS=$'\t' read -r skill_name skill_version skill_description <<< "$skill_metadata"
   awk -v kind="$manifest_kind" -v expected_name="$skill_name" -v expected_version="$skill_version" \
+    -v expected_description="$skill_description" \
     -v allowed_legacy_url="$review_recording_url" \
     -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/$manifest_file"
   awk -v kind="$mcp_kind" -v expected_name="$skill_name" \
@@ -264,13 +265,16 @@ validate_zip_contents() {
 # Generate a transient branded variant; there is no second maintained Skill.
 render_bloom_skill() {
   local source_root="$1" canonical_metadata bloom_metadata
+  local canonical_name canonical_version canonical_description bloom_name bloom_version bloom_description
   mkdir -p "$source_root/bloom"
   awk -f "$repo_root/scripts/brand-bloom-skill.awk" "$repo_root/skills/rainbrand/SKILL.md" > "$source_root/bloom/SKILL.md"
   awk -v profile=bloom -f "$repo_root/scripts/validate-branding.awk" "$source_root/bloom/SKILL.md" || \
     fail "Rainbrand identity remains in generated Bloom Skill"
   canonical_metadata="$(read_skill_metadata "$repo_root/skills/rainbrand/SKILL.md" rainbrand Rainbrand https://docs.rainbrand.com/mcp/getting-started)"
   bloom_metadata="$(read_skill_metadata "$source_root/bloom/SKILL.md" bloom Bloom https://docs.trybloom.ai/mcp/getting-started)"
-  [[ "${canonical_metadata#*$'\n'}" == "${bloom_metadata#*$'\n'}" ]] || fail "Bloom Skill version must match canonical Skill"
+  IFS=$'\t' read -r canonical_name canonical_version canonical_description <<< "$canonical_metadata"
+  IFS=$'\t' read -r bloom_name bloom_version bloom_description <<< "$bloom_metadata"
+  [[ "$canonical_version" == "$bloom_version" ]] || fail "Bloom Skill version must match canonical Skill"
 }
 
 validate_skill_archives() {
