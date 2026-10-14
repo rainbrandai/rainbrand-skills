@@ -3,6 +3,7 @@
 *.zip
 !dist/
 !dist/*.skill.zip
-!dist/*.plugin.zip
 !dist/*.claude-plugin.zip
+!dist/*.codex-plugin.zip
+!dist/*.cursor-plugin.zip
 .context/

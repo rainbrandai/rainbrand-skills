@@ -1,8 +1,8 @@
-# Offline checks for Rainbrand's portable and Claude-native profiles.
+# Offline checks for Rainbrand's provider-native plugin profiles.
 # Uses POSIX awk, not a general JSON Schema engine. Parse JSON before checking
 # types and the closed field sets used here; reject duplicate object keys.
-# Contract: https://agent-plugins.org/specification
-# Native contract: https://claude.com/docs/plugins/build
+# Contracts: developers.openai.com/plugins/build/plugins,
+# claude.com/docs/plugins/build, and cursor.com/docs/reference/plugins.
 
 function abort(message) {
     print "Error: " FILENAME ": " message > "/dev/stderr"
@@ -99,9 +99,11 @@ function value(    node, c, key, item) {
         position += RLENGTH
     } else if (substr(document, position, 4) == "true" || substr(document, position, 4) == "null") {
         types[node] = (c == "t" ? "boolean" : "null")
+        values[node] = substr(document, position, 4)
         position += 4
     } else if (substr(document, position, 5) == "false") {
         types[node] = "boolean"
+        values[node] = "false"
         position += 5
     } else abort("Invalid JSON value at character " position)
     depth--
@@ -167,31 +169,42 @@ END {
         if (text ~ /(^|[^a-z0-9])bloom([^a-z0-9]|$)|trybloom[.]ai/)
             abort("Prior branding or endpoint in JSON string")
     }
-    if (kind == "plugin") {
-        closed(root, "$schema name version description author homepage repository license keywords extensions", "plugin.json")
-        exact(root, "$schema", "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json")
+    if (kind == "codex-plugin") {
+        closed(root, "name version description author homepage repository license keywords skills mcpServers interface extensions", ".codex-plugin/plugin.json")
         exact(root, "name", expected_name)
         exact(root, "version", expected_version)
+        required_string(root, "description", "description", 4000)
+        author = member(root, "author", "object")
+        closed(author, "name url", "author")
+        exact(author, "name", "Rainbrand")
+        exact(author, "url", "https://www.rainbrand.com/")
         exact(root, "homepage", "https://www.rainbrand.com/")
-        if (root SUBSEP "repository" in children)
-            exact(root, "repository", "https://github.com/trybloomai/rainbrand-skills")
+        exact(root, "repository", "https://github.com/trybloomai/rainbrand-skills")
         exact(root, "license", "MIT")
-        required_string(root, "description", "description", 0)
-        exact(member(root, "author", "object"), "name", "Rainbrand")
-        # Keep OpenAI submission metadata inside the portable extension so the
-        # native adapter does not carry provider-specific review metadata.
-        extensions = member(root, "extensions", "object")
-        closed(extensions, "com.openai", "extensions")
-        openai = member(extensions, "com.openai", "object")
-        closed(openai, "interface review publication", "com.openai")
+        keywords = member(root, "keywords", "array")
+        string_array(keywords, "keywords", 20, 120)
+        if (size[keywords] != 4) abort("keywords must contain exactly four entries")
+        expected_keywords[1] = "rainbrand"
+        expected_keywords[2] = "brand"
+        expected_keywords[3] = "branding"
+        expected_keywords[4] = "creative"
+        for (i = 1; i <= size[keywords]; i++) {
+            if (values[children[keywords, i]] != expected_keywords[i])
+                abort("Unexpected keyword in position " i)
+        }
+        exact(root, "skills", "./skills/")
+        exact(root, "mcpServers", "./.mcp.json")
 
-        interface = member(openai, "interface", "object")
-        closed(interface, "displayName shortDescription longDescription developerName category capabilities websiteURL supportURL privacyPolicyURL termsOfServiceURL logo composerIcon", "com.openai.interface")
+        interface = member(root, "interface", "object")
+        closed(interface, "displayName shortDescription longDescription developerName category capabilities websiteURL supportURL privacyPolicyURL termsOfServiceURL defaultPrompt logo composerIcon", "interface")
         exact(interface, "displayName", "Rainbrand")
+        required_string(interface, "displayName", "displayName", 30)
         exact(interface, "shortDescription", "The brand layer for agents.")
-        exact(interface, "developerName", "Rainbrand")
-        exact(interface, "category", "Creativity")
+        required_string(interface, "shortDescription", "shortDescription", 30)
         required_string(interface, "longDescription", "longDescription", 4000)
+        exact(interface, "developerName", "Rainbrand")
+        required_string(interface, "developerName", "developerName", 80)
+        exact(interface, "category", "Creativity")
         capabilities = member(interface, "capabilities", "array")
         string_array(capabilities, "capabilities", 20, 120)
         expected_capabilities[1] = "Brand context and Brand Skills"
@@ -208,32 +221,42 @@ END {
         exact(interface, "supportURL", "https://www.rainbrand.com/faq/")
         exact(interface, "privacyPolicyURL", "https://www.rainbrand.com/privacy/")
         exact(interface, "termsOfServiceURL", "https://www.rainbrand.com/terms/")
-        if (has_artwork || (interface SUBSEP "logo" in children) || (interface SUBSEP "composerIcon" in children)) {
-            if (!has_artwork) abort("Listing icons require approved assets/rainbrand-logo.png")
-            exact(interface, "logo", "./assets/rainbrand-logo.png")
-            exact(interface, "composerIcon", "./assets/rainbrand-logo.png")
-        } else if (submission) abort("Submission blocked: approved Rainbrand artwork is required")
+        default_prompt = member(interface, "defaultPrompt", "array")
+        string_array(default_prompt, "defaultPrompt", 3, 128)
+        if (size[default_prompt] != 3) abort("defaultPrompt must contain exactly three entries")
+        expected_default_prompts[1] = "Show me the brands I can access."
+        expected_default_prompts[2] = "Onboard my brand from its website."
+        expected_default_prompts[3] = "Get the current context for my brand."
+        for (i = 1; i <= size[default_prompt]; i++) {
+            if (values[children[default_prompt, i]] != expected_default_prompts[i])
+                abort("Unexpected defaultPrompt in position " i)
+        }
+        exact(interface, "logo", "./assets/rainbrand-logo.png")
+        exact(interface, "composerIcon", "./assets/rainbrand-logo.png")
 
+        extensions = member(root, "extensions", "object")
+        closed(extensions, "com.openai", "extensions")
+        openai = member(extensions, "com.openai", "object")
+        closed(openai, "review publication", "com.openai")
         review = member(openai, "review", "object")
-        closed(review, "test_cases demo_recording_url", "com.openai.review")
-        if (review SUBSEP "demo_recording_url" in children) {
-            recording_url = required_string(review, "demo_recording_url", "demo_recording_url", 0)
-            if (recording_url !~ /^https:\/\/[^\/?#[:space:]@\\]+([\/?#][^[:space:]\\]*)?$/)
-                abort("demo_recording_url must be an HTTPS URL without whitespace or credentials")
-        } else if (submission) abort("Submission blocked: record and upload the Rainbrand walkthrough, then add demo_recording_url")
+        closed(review, "test_cases demo_recording_url commerce commerce_description", "com.openai.review")
+        recording_url = required_string(review, "demo_recording_url", "demo_recording_url", 0)
+        if (recording_url != allowed_legacy_url) abort("demo_recording_url must use the approved walkthrough")
+        commerce = member(review, "commerce", "boolean")
+        if (values[commerce] != "false") abort("commerce must be false")
+        required_string(review, "commerce_description", "commerce_description", 4000)
         test_cases = member(review, "test_cases", "object")
         closed(test_cases, "positive negative", "review.test_cases")
         positive = member(test_cases, "positive", "array")
         negative = member(test_cases, "negative", "array")
-        if (size[positive] != 6) abort("review.test_cases.positive must contain exactly six cases")
+        if (size[positive] != 5) abort("review.test_cases.positive must contain exactly five cases")
         if (size[negative] != 3) abort("review.test_cases.negative must contain exactly three cases")
         expected_tools[1] = "list_brands"
         expected_tools[2] = "get_brand"
-        expected_tools[3] = "get_account"
-        expected_tools[4] = "onboard_brand"
-        expected_tools[5] = "list_workspaces"
-        expected_tools[6] = "check_credits"
-        expected_positive_prompts[4] = "onboard the shakeshack website please"
+        expected_tools[3] = "onboard_brand"
+        expected_tools[4] = "list_workspaces"
+        expected_tools[5] = "check_credits"
+        expected_positive_prompts[3] = "onboard the shakeshack website please"
         expected_negative_prompts[1] = "What is the current USD/EUR exchange rate?"
         expected_negative_prompts[2] = "What is the weather in Tokyo today?"
         expected_negative_prompts[3] = "What is 17 + 25?"
@@ -251,30 +274,39 @@ END {
         for (i = 1; i <= size[negative]; i++) {
             item = children[negative, i]
             closed(item, "description prompt", "negative review case")
-            required_string(item, "description", "negative review description", 0)
+            required_string(item, "description", "negative review description", 4000)
             if (required_string(item, "prompt", "negative review prompt", 0) != expected_negative_prompts[i])
                 abort("Unexpected prompt in negative review case " i)
         }
-
         publication = member(openai, "publication", "object")
         closed(publication, "release_notes", "com.openai.publication")
-        required_string(publication, "release_notes", "release_notes", 0)
-
-        for (i = 1; i <= size[root]; i++) {
-            key = keys[root, i]
-            item = children[root, key]
-            if (key == "author") {
-                closed(item, "name email url", "author")
-                for (j = 1; j <= size[item]; j++) type(children[item, keys[item, j]], "string", "author field")
-            } else if (key == "keywords") {
-                type(item, "array", "keywords")
-                for (j = 1; j <= size[item]; j++) type(children[item, j], "string", "keyword")
-            } else if (key != "extensions") type(item, "string", key)
-        }
+        required_string(publication, "release_notes", "release_notes", 4000)
     } else if (kind == "claude-plugin") {
-        closed(root, "name version description author homepage repository license icon", ".claude-plugin/plugin.json")
+        closed(root, "name displayName version description author homepage repository license icon documentationUrl supportUrl privacyPolicyUrl termsOfServiceUrl", ".claude-plugin/plugin.json")
         exact(root, "name", expected_name)
+        exact(root, "displayName", "Rainbrand")
         exact(root, "version", expected_version)
+        required_string(root, "description", "description", 500)
+        author = member(root, "author", "object")
+        closed(author, "name url", "author")
+        exact(author, "name", "Rainbrand")
+        exact(author, "url", "https://www.rainbrand.com/")
+        exact(root, "homepage", "https://www.rainbrand.com/")
+        exact(root, "repository", "https://github.com/trybloomai/rainbrand-skills")
+        exact(root, "license", "MIT")
+        exact(root, "icon", "./assets/rainbrand-logo.png")
+        exact(root, "documentationUrl", "https://docs.rainbrand.com/mcp/getting-started")
+        exact(root, "supportUrl", "https://www.rainbrand.com/faq/")
+        exact(root, "privacyPolicyUrl", "https://www.rainbrand.com/privacy/")
+        exact(root, "termsOfServiceUrl", "https://www.rainbrand.com/terms/")
+    } else if (kind == "cursor-plugin") {
+        closed(root, "name displayName version minClientVersions description author homepage repository license logo keywords category tags skills mcpServers", ".cursor-plugin/plugin.json")
+        exact(root, "name", expected_name)
+        exact(root, "displayName", "Rainbrand")
+        exact(root, "version", expected_version)
+        min_client_versions = member(root, "minClientVersions", "object")
+        closed(min_client_versions, "cursor", "minClientVersions")
+        exact(min_client_versions, "cursor", "3.13.0")
         required_string(root, "description", "description", 0)
         author = member(root, "author", "object")
         closed(author, "name", "author")
@@ -282,17 +314,43 @@ END {
         exact(root, "homepage", "https://www.rainbrand.com/")
         exact(root, "repository", "https://github.com/trybloomai/rainbrand-skills")
         exact(root, "license", "MIT")
-        exact(root, "icon", "./assets/rainbrand-logo.png")
-    } else if (kind == "mcp" || kind == "claude-mcp") {
-        if (kind == "mcp") {
-            closed(root, "$schema mcpServers", "mcp.json")
-            exact(root, "$schema", "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json")
-        } else closed(root, "mcpServers", ".mcp.json")
+        exact(root, "logo", "assets/rainbrand-logo.png")
+        keywords = member(root, "keywords", "array")
+        string_array(keywords, "keywords", 20, 120)
+        if (size[keywords] != 5) abort("keywords must contain exactly five entries")
+        expected_cursor_keywords[1] = "rainbrand"
+        expected_cursor_keywords[2] = "brand"
+        expected_cursor_keywords[3] = "branding"
+        expected_cursor_keywords[4] = "creative"
+        expected_cursor_keywords[5] = "mcp"
+        for (i = 1; i <= size[keywords]; i++) {
+            if (values[children[keywords, i]] != expected_cursor_keywords[i])
+                abort("Unexpected keyword in position " i)
+        }
+        exact(root, "category", "integrations")
+        tags = member(root, "tags", "array")
+        string_array(tags, "tags", 20, 120)
+        if (size[tags] != 3) abort("tags must contain exactly three entries")
+        expected_tags[1] = "branding"
+        expected_tags[2] = "creative"
+        expected_tags[3] = "mcp"
+        for (i = 1; i <= size[tags]; i++) {
+            if (values[children[tags, i]] != expected_tags[i])
+                abort("Unexpected tag in position " i)
+        }
+        exact(root, "skills", "./skills/")
+        exact(root, "mcpServers", "./mcp.json")
+    } else if (kind == "codex-mcp" || kind == "claude-mcp" || kind == "cursor-mcp") {
+        closed(root, "mcpServers", (kind == "codex-mcp" ? ".mcp.json" : "mcp.json"))
         servers = member(root, "mcpServers", "object")
         if (size[servers] != 1 || !(servers SUBSEP expected_name in children)) abort("Expected exactly one MCP server named " expected_name)
         server = member(servers, expected_name, "object")
-        closed(server, "type url", "Rainbrand MCP server")
-        exact(server, "type", (kind == "mcp" ? "streamable-http" : "http"))
+        if (kind == "codex-mcp") {
+            closed(server, "url", "Rainbrand MCP server")
+        } else {
+            closed(server, "type url", "Rainbrand MCP server")
+            exact(server, "type", "http")
+        }
         exact(server, "url", "https://mcp.rainbrand.com/mcp")
     } else abort("Unknown validation profile")
 }

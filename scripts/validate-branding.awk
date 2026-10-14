@@ -9,7 +9,7 @@
                 text = substr(text, 1, start - 1) substr(text, start + length(allowed))
         }
         if (allow_compatibility) {
-            gsub(/`bloom[.]skill[.]zip`|`bloom\/skill[.]md`/, "", text)
+            gsub(/`?bloom[.]skill[.]zip`?|`?bloom\/skill[.]md`?/, "", text)
             gsub(/bloom compatibility|bloom identity/, "", text)
         }
         if (text ~ /(^|[^a-z0-9])bloom([^a-z0-9]|$)|trybloom[.]ai/) exit 1

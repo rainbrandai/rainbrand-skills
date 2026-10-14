@@ -1,36 +1,49 @@
 {
-  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "rainbrand",
   "version": "1.1.8",
   "description": "Use Rainbrand to create and onboard brands, retrieve and update brand context, and work with the generation tools available to your account.",
   "author": {
-    "name": "Rainbrand"
+    "name": "Rainbrand",
+    "url": "https://www.rainbrand.com/"
   },
   "homepage": "https://www.rainbrand.com/",
   "repository": "https://github.com/trybloomai/rainbrand-skills",
   "license": "MIT",
+  "keywords": [
+    "rainbrand",
+    "brand",
+    "branding",
+    "creative"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Rainbrand",
+    "shortDescription": "The brand layer for agents.",
+    "longDescription": "Rainbrand is the brand layer for agents. It maintains a brand's identity, guidance, and assets as shared context that agents and products can use and update.\n\nConnect your Rainbrand account to create or onboard brands, retrieve their context, and prepare changes. A Brand Skill contains the versioned context for one brand; this plugin supplies general operating guidance and declares the Rainbrand connection.\n\nThe connected account's live tools, descriptions, and schemas define the capabilities available and how to use them. The packaged Skill provides stable guidance for discovery and brand work without assuming which capabilities an account has.",
+    "developerName": "Rainbrand",
+    "category": "Creativity",
+    "capabilities": [
+      "Brand context and Brand Skills",
+      "Brand creation and onboarding",
+      "Brand context updates",
+      "Account and workspace information",
+      "Generation tools available to your account"
+    ],
+    "websiteURL": "https://www.rainbrand.com/",
+    "supportURL": "https://www.rainbrand.com/faq/",
+    "privacyPolicyURL": "https://www.rainbrand.com/privacy/",
+    "termsOfServiceURL": "https://www.rainbrand.com/terms/",
+    "defaultPrompt": [
+      "Show me the brands I can access.",
+      "Onboard my brand from its website.",
+      "Get the current context for my brand."
+    ],
+    "logo": "./assets/rainbrand-logo.png",
+    "composerIcon": "./assets/rainbrand-logo.png"
+  },
   "extensions": {
     "com.openai": {
-      "interface": {
-        "displayName": "Rainbrand",
-        "shortDescription": "The brand layer for agents.",
-        "longDescription": "Rainbrand is the brand layer for agents. It maintains a brand's identity, guidance, and assets as shared context that agents and products can use and update.\n\nConnect your Rainbrand account to create or onboard brands, retrieve their context, and prepare changes. A Brand Skill contains the versioned context for one brand; this plugin supplies general operating guidance and declares the Rainbrand connection.\n\nThe connected account's live tools, descriptions, and schemas define the capabilities available and how to use them. The packaged Skill provides stable guidance for discovery and brand work without assuming which capabilities an account has.",
-        "developerName": "Rainbrand",
-        "category": "Creativity",
-        "capabilities": [
-          "Brand context and Brand Skills",
-          "Brand creation and onboarding",
-          "Brand context updates",
-          "Account and workspace information",
-          "Generation tools available to your account"
-        ],
-        "websiteURL": "https://www.rainbrand.com/",
-        "supportURL": "https://www.rainbrand.com/faq/",
-        "privacyPolicyURL": "https://www.rainbrand.com/privacy/",
-        "termsOfServiceURL": "https://www.rainbrand.com/terms/",
-        "logo": "./assets/rainbrand-logo.png",
-        "composerIcon": "./assets/rainbrand-logo.png"
-      },
       "review": {
         "test_cases": {
           "positive": [
@@ -47,13 +60,7 @@
               "expected_behavior": "Uses the known Stripe Brand session ID to return the accessible brand's current status, profile, root guidance, navigation, files, and version metadata."
             },
             {
-              "description": "Identify the Rainbrand account connected to the conversation.",
-              "prompt": "Which Rainbrand account am I connected to?",
-              "tools_triggered": "get_account",
-              "expected_behavior": "Returns the authenticated account's email address and name."
-            },
-            {
-              "description": "Onboard a brand after account lookup, discovering the creation tool even when the preceding turn loaded only get_account. Run in a controlled reviewer account with credits.",
+              "description": "Onboard a brand, discovering the creation tool even when it is not initially loaded. Run in a controlled reviewer account with credits.",
               "prompt": "onboard the shakeshack website please",
               "tools_triggered": "onboard_brand",
               "expected_behavior": "Searches the connected Rainbrand tool catalog when onboard_brand is not loaded, then calls onboard_brand with Shake Shack's official public website as a website source, using the personal workspace by default. Does not treat the loaded tool subset as the full connection or replace connected tool discovery with browser-based docs lookup. Reports the actual result, follows the live tool contract for pending work or duplicate sources, and does not claim the brand is ready before verifying its state."
@@ -86,10 +93,12 @@
             }
           ]
         },
-        "demo_recording_url": "https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4"
+        "demo_recording_url": "https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4",
+        "commerce": false,
+        "commerce_description": "Rainbrand does not sell products or process payments through this plugin."
       },
       "publication": {
-        "release_notes": "Adds a separate Claude-native plugin ZIP alongside the portable plugin and standalone Skill ZIPs. All three reuse the canonical Skill; installation instructions now identify the correct archive for each client. Skill guidance and the hosted MCP endpoint are unchanged."
+        "release_notes": "Replaces the portable root package with provider-native Codex/OpenAI, Claude, and Cursor distributions. The canonical Skill and hosted MCP endpoint are unchanged."
       }
     }
   }

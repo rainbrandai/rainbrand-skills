@@ -5,6 +5,26 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ## [Unreleased]
 
+### Added
+
+- Add provider-native Codex/OpenAI and Cursor plugin archives alongside the
+  Claude-native archive. All three copy the canonical Rainbrand Skill and use
+  the same hosted MCP endpoint.
+- Include the current OpenAI listing, review, and publication metadata in the
+  Codex manifest for directory submission.
+
+### Changed
+
+- Align Claude and Cursor manifests with their current native plugin contracts
+  and streamline installation guidance around the archive for each client.
+- Validate exact provider archive members, manifest contracts, MCP parity,
+  source bytes, release assets, and reproducible output.
+
+### Removed
+
+- Retire the root `plugin.json` manifest and `rainbrand.plugin.zip` portable
+  distribution.
+
 ## [1.1.8] - 2026-10-13
 
 ### Added
