@@ -4,7 +4,6 @@
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export LC_ALL=C
 export TZ=UTC
-review_recording_url="https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4"
 
 shared_plugin_files=(
   skills/rainbrand/SKILL.md
@@ -110,6 +109,14 @@ validate_source_directory() {
   done
 }
 
+render_plugin_manifests() {
+  require_commands python3
+  validate_source_file skills/rainbrand/SKILL.md
+  validate_source_file plugin-copy.json
+  validate_source_file scripts/render-plugin-manifests.py
+  python3 "$repo_root/scripts/render-plugin-manifests.py" --write
+}
+
 validate_rainbrand_branding() {
   local file allow_compatibility
   for file in "$@"; do
@@ -117,8 +124,7 @@ validate_rainbrand_branding() {
     if [[ "$file" == README.md || "$file" == CHANGELOG.md ]]; then
       allow_compatibility=1
     fi
-    awk -v profile=rainbrand -v allowed_url="$review_recording_url" \
-      -v allow_compatibility="$allow_compatibility" \
+    awk -v profile=rainbrand -v allow_compatibility="$allow_compatibility" \
       -f "$repo_root/scripts/validate-branding.awk" "$repo_root/$file" || \
       fail "Unexpected branding or endpoint in package source: $file"
   done
@@ -158,7 +164,9 @@ validate_shared_sources() {
 validate_plugin_sources() {
   local provider="$1" manifest_kind manifest_file mcp_kind mcp_file skill_metadata skill_name skill_version skill_description
   validate_shared_sources
-  require_commands od tr
+  require_commands od tr python3
+  validate_source_file plugin-copy.json
+  validate_source_file scripts/render-plugin-manifests.py
   validate_source_directory assets rainbrand-logo.png
   validate_source_directory .codex-plugin plugin.json
   validate_source_directory .claude-plugin plugin.json
@@ -196,13 +204,13 @@ validate_plugin_sources() {
     *) fail "Unknown plugin provider: $provider" ;;
   esac
 
-  validate_rainbrand_branding "$manifest_file" "$mcp_file"
+  validate_rainbrand_branding plugin-copy.json "$manifest_file" "$mcp_file"
+  python3 "$repo_root/scripts/render-plugin-manifests.py" --check
   skill_metadata="$(read_skill_metadata "$repo_root/skills/rainbrand/SKILL.md" rainbrand Rainbrand \
     https://docs.rainbrand.com/mcp/getting-started)"
   IFS=$'\t' read -r skill_name skill_version skill_description <<< "$skill_metadata"
   awk -v kind="$manifest_kind" -v expected_name="$skill_name" -v expected_version="$skill_version" \
     -v expected_description="$skill_description" \
-    -v allowed_legacy_url="$review_recording_url" \
     -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/$manifest_file"
   awk -v kind="$mcp_kind" -v expected_name="$skill_name" \
     -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/$mcp_file"

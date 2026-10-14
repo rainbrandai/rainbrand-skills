@@ -165,7 +165,6 @@ END {
     # presentation or service URLs from the source-level text check.
     for (node in values) {
         text = tolower(values[node])
-        if (text == tolower(allowed_legacy_url)) continue
         if (text ~ /(^|[^a-z0-9])bloom([^a-z0-9]|$)|trybloom[.]ai/)
             abort("Prior branding or endpoint in JSON string")
     }
@@ -177,61 +176,31 @@ END {
         required_string(root, "description", "description", 4000)
         author = member(root, "author", "object")
         closed(author, "name url", "author")
-        exact(author, "name", "Rainbrand")
-        exact(author, "url", "https://www.rainbrand.com/")
-        exact(root, "homepage", "https://www.rainbrand.com/")
-        exact(root, "repository", "https://github.com/trybloomai/rainbrand-skills")
-        exact(root, "license", "MIT")
+        required_string(author, "name", "author name", 120)
+        required_string(author, "url", "author URL", 2048)
+        required_string(root, "homepage", "homepage", 2048)
+        required_string(root, "repository", "repository", 2048)
+        required_string(root, "license", "license", 0)
         keywords = member(root, "keywords", "array")
         string_array(keywords, "keywords", 20, 120)
-        if (size[keywords] != 4) abort("keywords must contain exactly four entries")
-        expected_keywords[1] = "rainbrand"
-        expected_keywords[2] = "brand"
-        expected_keywords[3] = "branding"
-        expected_keywords[4] = "creative"
-        for (i = 1; i <= size[keywords]; i++) {
-            if (values[children[keywords, i]] != expected_keywords[i])
-                abort("Unexpected keyword in position " i)
-        }
         exact(root, "skills", "./skills/")
         exact(root, "mcpServers", "./.mcp.json")
 
         interface = member(root, "interface", "object")
         closed(interface, "displayName shortDescription longDescription developerName category capabilities websiteURL supportURL privacyPolicyURL termsOfServiceURL defaultPrompt logo composerIcon", "interface")
-        exact(interface, "displayName", "Rainbrand")
         required_string(interface, "displayName", "displayName", 30)
-        exact(interface, "shortDescription", "The brand layer for agents.")
         required_string(interface, "shortDescription", "shortDescription", 30)
         required_string(interface, "longDescription", "longDescription", 4000)
-        exact(interface, "developerName", "Rainbrand")
         required_string(interface, "developerName", "developerName", 80)
-        exact(interface, "category", "Creativity")
+        required_string(interface, "category", "category", 0)
         capabilities = member(interface, "capabilities", "array")
         string_array(capabilities, "capabilities", 20, 120)
-        expected_capabilities[1] = "Brand context and Brand Skills"
-        expected_capabilities[2] = "Brand creation and onboarding"
-        expected_capabilities[3] = "Brand context updates"
-        expected_capabilities[4] = "Account and workspace information"
-        expected_capabilities[5] = "Generation tools available to your account"
-        if (size[capabilities] != 5) abort("capabilities must contain exactly five entries")
-        for (i = 1; i <= size[capabilities]; i++) {
-            if (values[children[capabilities, i]] != expected_capabilities[i])
-                abort("Unexpected capability in position " i)
-        }
-        exact(interface, "websiteURL", "https://www.rainbrand.com/")
-        exact(interface, "supportURL", "https://www.rainbrand.com/faq/")
-        exact(interface, "privacyPolicyURL", "https://www.rainbrand.com/privacy/")
-        exact(interface, "termsOfServiceURL", "https://www.rainbrand.com/terms/")
+        required_string(interface, "websiteURL", "websiteURL", 1024)
+        required_string(interface, "supportURL", "supportURL", 1024)
+        required_string(interface, "privacyPolicyURL", "privacyPolicyURL", 1024)
+        required_string(interface, "termsOfServiceURL", "termsOfServiceURL", 1024)
         default_prompt = member(interface, "defaultPrompt", "array")
         string_array(default_prompt, "defaultPrompt", 3, 128)
-        if (size[default_prompt] != 3) abort("defaultPrompt must contain exactly three entries")
-        expected_default_prompts[1] = "Show me the brands I can access."
-        expected_default_prompts[2] = "Onboard my brand from its website."
-        expected_default_prompts[3] = "Get the current context for my brand."
-        for (i = 1; i <= size[default_prompt]; i++) {
-            if (values[children[default_prompt, i]] != expected_default_prompts[i])
-                abort("Unexpected defaultPrompt in position " i)
-        }
         exact(interface, "logo", "./assets/rainbrand-logo.png")
         exact(interface, "composerIcon", "./assets/rainbrand-logo.png")
 
@@ -242,9 +211,9 @@ END {
         review = member(openai, "review", "object")
         closed(review, "test_cases demo_recording_url commerce commerce_description", "com.openai.review")
         recording_url = required_string(review, "demo_recording_url", "demo_recording_url", 0)
-        if (recording_url != allowed_legacy_url) abort("demo_recording_url must use the approved walkthrough")
+        if (recording_url !~ /^https:\/\/[^\/?#[:space:]@\\]+([\/?#][^[:space:]\\]*)?$/)
+            abort("demo_recording_url must be an HTTPS URL without whitespace or credentials")
         commerce = member(review, "commerce", "boolean")
-        if (values[commerce] != "false") abort("commerce must be false")
         required_string(review, "commerce_description", "commerce_description", 4000)
         test_cases = member(review, "test_cases", "object")
         closed(test_cases, "positive negative", "review.test_cases")
@@ -252,32 +221,19 @@ END {
         negative = member(test_cases, "negative", "array")
         if (size[positive] != 5) abort("review.test_cases.positive must contain exactly five cases")
         if (size[negative] != 3) abort("review.test_cases.negative must contain exactly three cases")
-        expected_tools[1] = "list_brands"
-        expected_tools[2] = "get_brand"
-        expected_tools[3] = "onboard_brand"
-        expected_tools[4] = "list_workspaces"
-        expected_tools[5] = "check_credits"
-        expected_positive_prompts[3] = "onboard the shakeshack website please"
-        expected_negative_prompts[1] = "What is the current USD/EUR exchange rate?"
-        expected_negative_prompts[2] = "What is the weather in Tokyo today?"
-        expected_negative_prompts[3] = "What is 17 + 25?"
         for (i = 1; i <= size[positive]; i++) {
             item = children[positive, i]
             closed(item, "description prompt tools_triggered expected_behavior", "positive review case")
             required_string(item, "description", "positive review description", 4000)
             required_string(item, "prompt", "positive review prompt", 0)
             required_string(item, "expected_behavior", "positive expected behavior", 0)
-            if (required_string(item, "tools_triggered", "positive tools_triggered", 0) != expected_tools[i])
-                abort("Unexpected tools_triggered value in positive review case " i)
-            if (i in expected_positive_prompts && required_string(item, "prompt", "positive review prompt", 0) != expected_positive_prompts[i])
-                abort("Unexpected prompt in positive review case " i)
+            required_string(item, "tools_triggered", "positive tools_triggered", 0)
         }
         for (i = 1; i <= size[negative]; i++) {
             item = children[negative, i]
             closed(item, "description prompt", "negative review case")
             required_string(item, "description", "negative review description", 4000)
-            if (required_string(item, "prompt", "negative review prompt", 0) != expected_negative_prompts[i])
-                abort("Unexpected prompt in negative review case " i)
+            required_string(item, "prompt", "negative review prompt", 0)
         }
         publication = member(openai, "publication", "object")
         closed(publication, "release_notes", "com.openai.publication")
@@ -285,62 +241,44 @@ END {
     } else if (kind == "claude-plugin") {
         closed(root, "name displayName version description author homepage repository license icon documentationUrl supportUrl privacyPolicyUrl termsOfServiceUrl", ".claude-plugin/plugin.json")
         exact(root, "name", expected_name)
-        exact(root, "displayName", "Rainbrand")
+        required_string(root, "displayName", "displayName", 0)
         exact(root, "version", expected_version)
         exact(root, "description", expected_description)
         required_string(root, "description", "description", 500)
         author = member(root, "author", "object")
         closed(author, "name url", "author")
-        exact(author, "name", "Rainbrand")
-        exact(author, "url", "https://www.rainbrand.com/")
-        exact(root, "homepage", "https://www.rainbrand.com/")
-        exact(root, "repository", "https://github.com/trybloomai/rainbrand-skills")
-        exact(root, "license", "MIT")
+        required_string(author, "name", "author name", 0)
+        required_string(author, "url", "author URL", 0)
+        required_string(root, "homepage", "homepage", 0)
+        required_string(root, "repository", "repository", 0)
+        required_string(root, "license", "license", 0)
         exact(root, "icon", "./assets/rainbrand-logo.png")
-        exact(root, "documentationUrl", "https://docs.rainbrand.com/mcp/getting-started")
-        exact(root, "supportUrl", "https://www.rainbrand.com/faq/")
-        exact(root, "privacyPolicyUrl", "https://www.rainbrand.com/privacy/")
-        exact(root, "termsOfServiceUrl", "https://www.rainbrand.com/terms/")
+        required_string(root, "documentationUrl", "documentationUrl", 0)
+        required_string(root, "supportUrl", "supportUrl", 0)
+        required_string(root, "privacyPolicyUrl", "privacyPolicyUrl", 0)
+        required_string(root, "termsOfServiceUrl", "termsOfServiceUrl", 0)
     } else if (kind == "cursor-plugin") {
         closed(root, "name displayName version minClientVersions description author homepage repository license logo keywords category tags skills mcpServers", ".cursor-plugin/plugin.json")
         exact(root, "name", expected_name)
-        exact(root, "displayName", "Rainbrand")
+        required_string(root, "displayName", "displayName", 0)
         exact(root, "version", expected_version)
         exact(root, "description", expected_description)
         min_client_versions = member(root, "minClientVersions", "object")
         closed(min_client_versions, "cursor", "minClientVersions")
-        exact(min_client_versions, "cursor", "3.13.0")
+        required_string(min_client_versions, "cursor", "minimum Cursor version", 0)
         required_string(root, "description", "description", 0)
         author = member(root, "author", "object")
         closed(author, "name", "author")
-        exact(author, "name", "Rainbrand")
-        exact(root, "homepage", "https://www.rainbrand.com/")
-        exact(root, "repository", "https://github.com/trybloomai/rainbrand-skills")
-        exact(root, "license", "MIT")
+        required_string(author, "name", "author name", 0)
+        required_string(root, "homepage", "homepage", 0)
+        required_string(root, "repository", "repository", 0)
+        required_string(root, "license", "license", 0)
         exact(root, "logo", "assets/rainbrand-logo.png")
         keywords = member(root, "keywords", "array")
         string_array(keywords, "keywords", 20, 120)
-        if (size[keywords] != 5) abort("keywords must contain exactly five entries")
-        expected_cursor_keywords[1] = "rainbrand"
-        expected_cursor_keywords[2] = "brand"
-        expected_cursor_keywords[3] = "branding"
-        expected_cursor_keywords[4] = "creative"
-        expected_cursor_keywords[5] = "mcp"
-        for (i = 1; i <= size[keywords]; i++) {
-            if (values[children[keywords, i]] != expected_cursor_keywords[i])
-                abort("Unexpected keyword in position " i)
-        }
-        exact(root, "category", "integrations")
+        required_string(root, "category", "category", 0)
         tags = member(root, "tags", "array")
         string_array(tags, "tags", 20, 120)
-        if (size[tags] != 3) abort("tags must contain exactly three entries")
-        expected_tags[1] = "branding"
-        expected_tags[2] = "creative"
-        expected_tags[3] = "mcp"
-        for (i = 1; i <= size[tags]; i++) {
-            if (values[children[tags, i]] != expected_tags[i])
-                abort("Unexpected tag in position " i)
-        }
         exact(root, "skills", "./skills/")
         exact(root, "mcpServers", "./mcp.json")
     } else if (kind == "codex-mcp" || kind == "claude-mcp" || kind == "cursor-mcp") {

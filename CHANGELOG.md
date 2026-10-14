@@ -17,6 +17,8 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 - Align Claude and Cursor manifests with their current native plugin contracts
   and streamline installation guidance around the archive for each client.
+- Generate provider manifests from canonical Skill metadata and one shared
+  plugin copy file so listing and review prose cannot drift between files.
 - Validate exact provider archive members, manifest contracts, MCP parity,
   source bytes, release assets, and reproducible output.
 

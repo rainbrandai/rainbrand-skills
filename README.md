@@ -59,6 +59,18 @@ the MCP connection.
 
 ## Package and validate
 
+Shared name, version, and description come from the canonical Skill
+frontmatter. All other provider listing and review copy lives in
+[`plugin-copy.json`](plugin-copy.json). After editing either source, regenerate
+the checked-in provider manifests directly with:
+
+```bash
+python3 scripts/render-plugin-manifests.py --write
+```
+
+The package commands run this renderer automatically before validation and
+write fully expanded JSON manifests into each archive.
+
 Build every release asset and run all archive validators:
 
 ```bash

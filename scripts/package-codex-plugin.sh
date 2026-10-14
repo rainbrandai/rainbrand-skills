@@ -5,6 +5,7 @@ export LC_ALL=C
 
 source "$(dirname "${BASH_SOURCE[0]}")/plugin-common.sh"
 require_commands awk zip unzip cmp sort mktemp od tr
+render_plugin_manifests
 validate_plugin_sources codex
 
 package_dir="$(mktemp -d "${TMPDIR:-/tmp}/rainbrand-codex-plugin.XXXXXX")"

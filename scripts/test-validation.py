@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for the package validators; Python is only a test dependency."""
+"""Regression checks for Rainbrand package generation and validation."""
 
 import copy
 import json
@@ -15,10 +15,6 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parent.parent
-REVIEW_RECORDING_URL = (
-    'https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/'
-    'rainbrand-review-walkthrough-v1.1.2.mp4'
-)
 SHARED_MEMBERS = [
     'skills/rainbrand/SKILL.md', 'README.md', 'CHANGELOG.md', 'LICENSE',
     'assets/rainbrand-logo.png',
@@ -62,6 +58,7 @@ class PackageValidationTests(unittest.TestCase):
             provider: json.loads((self.root / spec['manifest']).read_text())
             for provider, spec in PLUGIN_SPECS.items()
         }
+        self.plugin_copy = json.loads((self.root / 'plugin-copy.json').read_text())
         self.codex_mcp = json.loads((self.root / '.mcp.json').read_text())
         self.native_mcp = json.loads((self.root / 'mcp.json').read_text())
         self.run_script('package-release.sh')
@@ -81,6 +78,17 @@ class PackageValidationTests(unittest.TestCase):
         path = self.root / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data, indent=2) + '\n')
+
+    def run_renderer(self, *args, succeeds=True):
+        result = subprocess.run(
+            ['python3', str(self.root / 'scripts/render-plugin-manifests.py'), *args],
+            cwd=self.root, capture_output=True, text=True,
+        )
+        if succeeds:
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        else:
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        return result
 
     def restore_manifest(self, provider):
         self.write_json(PLUGIN_SPECS[provider]['manifest'], self.manifests[provider])
@@ -115,8 +123,45 @@ class PackageValidationTests(unittest.TestCase):
                     changed = copy.deepcopy(self.manifests[provider])
                     changed[field] = value
                     self.write_json(spec['manifest'], changed)
-                    self.run_script(spec['package'], succeeds=False)
+                    self.run_script(spec['validate'], succeeds=False)
                     self.restore_manifest(provider)
+
+    def test_plugin_copy_is_the_single_provider_prose_source(self):
+        self.run_renderer('--check')
+
+        validator = (self.root / 'scripts/validate-manifests.awk').read_text()
+        interface = self.plugin_copy['codex']['interface']
+        review = self.plugin_copy['codex']['review']
+        prose = [
+            interface['shortDescription'], interface['longDescription'],
+            *interface['capabilities'], *interface['defaultPrompt'],
+            review['commerce_description'],
+            self.plugin_copy['codex']['publication']['release_notes'],
+        ]
+        for cases in review['test_cases'].values():
+            for case in cases:
+                prose.extend(value for key, value in case.items() if key != 'tools_triggered')
+        for value in prose:
+            with self.subTest(value=value[:40]):
+                self.assertNotIn(value, validator)
+
+        changed_copy = copy.deepcopy(self.plugin_copy)
+        changed_copy['codex']['interface']['shortDescription'] = 'Canonical copy changed.'
+        self.write_json('plugin-copy.json', changed_copy)
+        self.run_renderer('--check', succeeds=False)
+        self.run_script('package-codex-plugin.sh')
+        rendered = json.loads((self.root / '.codex-plugin/plugin.json').read_text())
+        self.assertEqual(rendered['interface']['shortDescription'], 'Canonical copy changed.')
+
+        skill_path = self.root / 'skills/rainbrand/SKILL.md'
+        original_description = self.manifests['codex']['description']
+        replacement = 'Use the canonical Rainbrand package description.'
+        skill_path.write_text(skill_path.read_text().replace(original_description, replacement, 1))
+        self.run_renderer('--check', succeeds=False)
+        self.run_renderer('--write')
+        for spec in PLUGIN_SPECS.values():
+            manifest = json.loads((self.root / spec['manifest']).read_text())
+            self.assertEqual(manifest['description'], replacement)
 
     def test_codex_submission_metadata_contract(self):
         manifest = self.manifests['codex']
@@ -153,12 +198,12 @@ class PackageValidationTests(unittest.TestCase):
         for label, changed in changes:
             with self.subTest(label=label):
                 self.write_json('.codex-plugin/plugin.json', changed)
-                self.run_script('package-codex-plugin.sh', succeeds=False)
+                self.run_script('validate-codex-plugin.sh', succeeds=False)
                 self.restore_manifest('codex')
 
         self.assertEqual(
             manifest['extensions']['com.openai']['review']['demo_recording_url'],
-            REVIEW_RECORDING_URL,
+            self.plugin_copy['codex']['review']['demo_recording_url'],
         )
         self.assertEqual(
             len(manifest['extensions']['com.openai']['review']['test_cases']['positive']), 5)
@@ -177,7 +222,7 @@ class PackageValidationTests(unittest.TestCase):
             for payload in payloads:
                 with self.subTest(provider=provider, payload=payload[:30]):
                     (self.root / spec['manifest']).write_text(payload)
-                    self.run_script(spec['package'], succeeds=False)
+                    self.run_script(spec['validate'], succeeds=False)
                     self.restore_manifest(provider)
 
     def test_mcp_contract_and_provider_parity(self):
