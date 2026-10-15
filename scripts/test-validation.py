@@ -421,25 +421,12 @@ class PackageValidationTests(unittest.TestCase):
         self.run_script('package-skill.sh')
         self.assertEqual(bloom_archive.read_bytes(), before)
 
-    def test_brief_world_model_complements_live_tool_contracts(self):
+    def test_installable_skills_omit_rest_snapshot_instruction(self):
         rainbrand = (self.root / 'skills/rainbrand/SKILL.md').read_text()
-        section = rainbrand.split('## Use brand context\n', 1)[1]
         bloom = (self.root / 'skills/bloom/SKILL.md').read_text()
 
-        self.assertEqual(section.count('\n### '), 3)
-        for concept in ('Brand', 'Brief', 'Review', 'native input', 'authority'):
-            with self.subTest(concept=concept):
-                self.assertIn(concept, section)
-
-        duplicated_contract_details = (
-            '`create_brief`', '`get_brief`', '`get_brand`', '`view_files`',
-            '`brief_id`', '`wait: true`', 'GET /brands', 'For a specific task',
-        )
-        for detail in duplicated_contract_details:
-            with self.subTest(duplicated_detail=detail):
-                self.assertNotIn(detail, section)
-
-        self.assertNotIn('Choose a Brand, Brief, or Review', bloom)
+        self.assertNotIn('GET /brands', rainbrand)
+        self.assertNotIn('GET /brands', bloom)
 
     def test_skill_versions_can_move_independently(self):
         bloom_skill = self.root / 'skills/bloom/SKILL.md'

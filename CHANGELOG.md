@@ -7,9 +7,8 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ### Changed
 
-- Clarified when agents should read a Brand, prepare work with a Brief, or evaluate it with a Review, and how to hand completed Briefs to Rainbrand or another production system. `bloom.skill.zip` remains byte-for-byte unchanged.
-- Maintain `bloom.skill.zip` as an independent source, allowing Rainbrand
-  guidance to evolve without changing the compatibility Skill.
+- Package `bloom.skill.zip` from an independent canonical source so Rainbrand guidance can evolve without rewriting the compatibility Skill.
+- Removed the unrelated REST snapshot instruction from both installable Skills.
 
 ## [1.1.9] - 2026-10-14
 
