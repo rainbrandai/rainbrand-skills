@@ -131,25 +131,46 @@ validate_rainbrand_branding() {
   done
 }
 
+validate_bloom_branding() {
+  local file
+  for file in "$@"; do
+    awk -v profile=bloom -f "$repo_root/scripts/validate-branding.awk" "$repo_root/$file" || \
+      fail "Unexpected branding or endpoint in Bloom package source: $file"
+  done
+}
+
 validate_shared_sources() {
-  local file skill_metadata skill_name skill_version skill_description release_version
-  for file in skills/rainbrand/SKILL.md README.md CHANGELOG.md LICENSE; do
+  local file skill_metadata skill_name skill_version skill_description
+  local bloom_metadata bloom_name bloom_version bloom_description release_version
+  for file in skills/rainbrand/SKILL.md skills/bloom/SKILL.md README.md CHANGELOG.md LICENSE; do
     validate_source_file "$file"
   done
-  for file in skills skills/rainbrand; do
-    [[ -d "$repo_root/$file" && ! -L "$repo_root/$file" ]] || fail "Expected a regular source directory: $file"
-  done
+  [[ -d "$repo_root/skills" && ! -L "$repo_root/skills" ]] || \
+    fail "Expected a regular source directory: skills"
+  validate_source_directory skills/rainbrand SKILL.md
+  validate_source_directory skills/bloom SKILL.md
   for file in "$repo_root"/skills/*; do
-    [[ "$file" == "$repo_root/skills/rainbrand" ]] || fail "Expected only the Rainbrand Skill"
+    case "$file" in
+      "$repo_root/skills/rainbrand"|"$repo_root/skills/bloom") ;;
+      *) fail "Expected only the Rainbrand and Bloom Skills" ;;
+    esac
   done
   [[ ! -e "$repo_root/plugin.json" && ! -L "$repo_root/plugin.json" ]] || fail "Root plugin.json is retired"
 
   validate_rainbrand_branding skills/rainbrand/SKILL.md README.md CHANGELOG.md LICENSE
+  validate_bloom_branding skills/bloom/SKILL.md
   skill_metadata="$(read_skill_metadata "$repo_root/skills/rainbrand/SKILL.md" rainbrand Rainbrand \
     https://docs.rainbrand.com/mcp/getting-started)"
   IFS=$'\t' read -r skill_name skill_version skill_description <<< "$skill_metadata"
   [[ "$skill_name" == rainbrand ]] || fail "Skill name must match its directory: rainbrand"
-  [[ "$skill_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || fail "Expected a stable semantic Skill version"
+  [[ "$skill_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || \
+    fail "Expected a stable semantic Rainbrand Skill version"
+  bloom_metadata="$(read_skill_metadata "$repo_root/skills/bloom/SKILL.md" bloom Bloom \
+    https://docs.trybloom.ai/mcp/getting-started)"
+  IFS=$'\t' read -r bloom_name bloom_version bloom_description <<< "$bloom_metadata"
+  [[ "$bloom_name" == bloom ]] || fail "Skill name must match its directory: bloom"
+  [[ "$bloom_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || \
+    fail "Expected a stable semantic Bloom Skill version"
 
   release_version="$(awk '
     /^## \[[0-9]/ {
@@ -272,24 +293,8 @@ validate_zip_contents() {
   done
 }
 
-# Generate a transient branded variant; there is no second maintained Skill.
-render_bloom_skill() {
-  local source_root="$1" canonical_metadata bloom_metadata
-  local canonical_name canonical_version canonical_description bloom_name bloom_version bloom_description
-  mkdir -p "$source_root/bloom"
-  awk -f "$repo_root/scripts/brand-bloom-skill.awk" "$repo_root/skills/rainbrand/SKILL.md" > "$source_root/bloom/SKILL.md"
-  awk -v profile=bloom -f "$repo_root/scripts/validate-branding.awk" "$source_root/bloom/SKILL.md" || \
-    fail "Rainbrand identity remains in generated Bloom Skill"
-  canonical_metadata="$(read_skill_metadata "$repo_root/skills/rainbrand/SKILL.md" rainbrand Rainbrand https://docs.rainbrand.com/mcp/getting-started)"
-  bloom_metadata="$(read_skill_metadata "$source_root/bloom/SKILL.md" bloom Bloom https://docs.trybloom.ai/mcp/getting-started)"
-  IFS=$'\t' read -r canonical_name canonical_version canonical_description <<< "$canonical_metadata"
-  IFS=$'\t' read -r bloom_name bloom_version bloom_description <<< "$bloom_metadata"
-  [[ "$canonical_version" == "$bloom_version" ]] || fail "Bloom Skill version must match canonical Skill"
-}
-
 validate_skill_archives() {
   local archive_dir="$1" validation_dir="$2"
   validate_zip_contents "$archive_dir/rainbrand.skill.zip" "$repo_root/skills" "$validation_dir" "${skill_files[@]}"
-  render_bloom_skill "$validation_dir/bloom-source"
-  validate_zip_contents "$archive_dir/bloom.skill.zip" "$validation_dir/bloom-source" "$validation_dir" "${bloom_skill_files[@]}"
+  validate_zip_contents "$archive_dir/bloom.skill.zip" "$repo_root/skills" "$validation_dir" "${bloom_skill_files[@]}"
 }

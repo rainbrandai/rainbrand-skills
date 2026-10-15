@@ -5,8 +5,10 @@ lives in `README.md`.
 
 ## Canonical sources
 
-- `skills/rainbrand/SKILL.md` owns the shared package name, version,
+- `skills/rainbrand/SKILL.md` owns the Rainbrand package name, version,
   description, license, author, and documentation URL.
+- `skills/bloom/SKILL.md` independently owns those fields and guidance for the
+  standalone Bloom compatibility Skill.
 - `plugin-copy.json` owns provider listing, review, and publication copy.
 - `plugin-config.json` owns the Rainbrand MCP server name and endpoint.
 
@@ -57,7 +59,7 @@ bloom.skill.zip
 
 Builds are deterministic. Validation checks generated-file freshness, provider
 manifest contracts, submission metadata, MCP parity, branding, exact archive
-members, regular file types, canonical Skill and asset byte parity, and
+members, regular file types, source Skill and asset byte parity, and
 reproducibility across time zones and umasks.
 
 Provider references:

@@ -305,6 +305,10 @@ class PackageValidationTests(unittest.TestCase):
         self.run_script('package-skill.sh', succeeds=False)
         (self.root / 'skills/extra').rmdir()
 
+        (self.root / 'skills/bloom/extra.md').write_text('Unexpected source.\n')
+        self.run_script('package-skill.sh', succeeds=False)
+        (self.root / 'skills/bloom/extra.md').unlink()
+
         (self.root / '.cursor-plugin/extra.json').write_text('{}\n')
         self.run_script('package-cursor-plugin.sh', succeeds=False)
 
@@ -326,6 +330,11 @@ class PackageValidationTests(unittest.TestCase):
         with zipfile.ZipFile(self.root / 'dist/rainbrand.skill.zip') as archive:
             self.assertEqual(archive.namelist(), ['rainbrand/SKILL.md'])
             self.assertEqual(archive.read('rainbrand/SKILL.md'), canonical_skill)
+
+        bloom_skill = (self.root / 'skills/bloom/SKILL.md').read_bytes()
+        with zipfile.ZipFile(self.root / 'dist/bloom.skill.zip') as archive:
+            self.assertEqual(archive.namelist(), ['bloom/SKILL.md'])
+            self.assertEqual(archive.read('bloom/SKILL.md'), bloom_skill)
 
     def test_corrupt_or_unexpected_members_fail_each_provider(self):
         for provider, spec in PLUGIN_SPECS.items():
@@ -395,22 +404,43 @@ class PackageValidationTests(unittest.TestCase):
             for name, contents in before.items():
                 self.assertEqual((self.root / 'dist' / name).read_bytes(), contents)
 
-    def test_bloom_skill_identity_and_guidance_parity(self):
-        canonical = (self.root / 'skills/rainbrand/SKILL.md').read_bytes()
-        expected = canonical
-        for before, after in (
-            (b'docs.rainbrand.com', b'docs.trybloom.ai'),
-            (b'www.rainbrand.com', b'www.trybloom.ai'),
-            (b'mcp.rainbrand.com', b'mcp.trybloom.ai'),
-            (b'Rainbrand', b'Bloom'), (b'rainbrand', b'bloom'),
-        ):
-            expected = expected.replace(before, after)
+    def test_bloom_skill_archive_matches_independent_source(self):
+        source = (self.root / 'skills/bloom/SKILL.md').read_bytes()
         with zipfile.ZipFile(self.root / 'dist/bloom.skill.zip') as archive:
             self.assertEqual(archive.namelist(), ['bloom/SKILL.md'])
             bloom = archive.read('bloom/SKILL.md')
-        self.assertEqual(bloom, expected)
+        self.assertEqual(bloom, source)
         self.assertNotIn(b'rainbrand', bloom.lower())
-        self.assertFalse((self.root / 'skills/bloom').exists())
+
+    def test_rainbrand_changes_do_not_change_bloom_skill_archive(self):
+        bloom_archive = self.root / 'dist/bloom.skill.zip'
+        before = bloom_archive.read_bytes()
+        rainbrand_skill = self.root / 'skills/rainbrand/SKILL.md'
+        rainbrand_skill.write_text(
+            rainbrand_skill.read_text() + '\nRainbrand-only guidance.\n')
+        self.run_script('package-skill.sh')
+        self.assertEqual(bloom_archive.read_bytes(), before)
+
+    def test_installable_skills_omit_rest_snapshot_instruction(self):
+        rainbrand = (self.root / 'skills/rainbrand/SKILL.md').read_text()
+        bloom = (self.root / 'skills/bloom/SKILL.md').read_text()
+
+        self.assertNotIn('GET /brands', rainbrand)
+        self.assertNotIn('GET /brands', bloom)
+
+    def test_skill_versions_can_move_independently(self):
+        bloom_skill = self.root / 'skills/bloom/SKILL.md'
+        lines = bloom_skill.read_text().splitlines()
+        version_index = next(
+            index for index, line in enumerate(lines)
+            if line.startswith('  version: ')
+        )
+        lines[version_index] = '  version: "1.0.0"'
+        bloom_skill.write_text('\n'.join(lines) + '\n')
+        self.run_script('package-skill.sh')
+        with zipfile.ZipFile(self.root / 'dist/bloom.skill.zip') as archive:
+            self.assertEqual(
+                archive.read('bloom/SKILL.md'), bloom_skill.read_bytes())
 
     def test_skill_description_keeps_correct_media_scope(self):
         skill = (self.root / 'skills/rainbrand/SKILL.md').read_text()
