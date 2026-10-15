@@ -7,6 +7,7 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ### Changed
 
+- Updated the Rainbrand Skill to guide agents through creating, checking, reusing, and correcting Briefs, using them for image generation or work in another system, and running Review without a Brief. `bloom.skill.zip` remains byte-for-byte unchanged.
 - Maintain `bloom.skill.zip` as an independent source, allowing Rainbrand
   guidance to evolve without changing the compatibility Skill.
 

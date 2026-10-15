@@ -421,6 +421,34 @@ class PackageValidationTests(unittest.TestCase):
         self.run_script('package-skill.sh')
         self.assertEqual(bloom_archive.read_bytes(), before)
 
+    def test_brief_workflow_is_scoped_to_rainbrand_skill(self):
+        rainbrand = ' '.join(
+            (self.root / 'skills/rainbrand/SKILL.md').read_text().split())
+        bloom = ' '.join(
+            (self.root / 'skills/bloom/SKILL.md').read_text().split())
+
+        workflow = (
+            'A Brief is the Brand guidance and files Rainbrand selects for your work.',
+            'call `create_brief`',
+            'call `get_brief` with the returned `brief_id` and `wait: true`',
+            "Inspect the completed Brief's guidance and assets before using them.",
+            'pass the completed `brief_id` unchanged',
+            "use the Brief's returned guidance and assets directly",
+            'A Review does not require a Brief.',
+        )
+        for guidance in workflow:
+            with self.subTest(guidance=guidance):
+                self.assertIn(guidance, rainbrand)
+
+        self.assertLess(rainbrand.index('call `create_brief`'),
+                        rainbrand.index('call `get_brief`'))
+        self.assertLess(rainbrand.index('call `get_brief`'),
+                        rainbrand.index("Inspect the completed Brief's guidance"))
+
+        for field in ('`create_brief`', '`get_brief`', '`brief_id`', '`wait: true`'):
+            with self.subTest(legacy_field=field):
+                self.assertNotIn(field, bloom)
+
     def test_skill_versions_can_move_independently(self):
         bloom_skill = self.root / 'skills/bloom/SKILL.md'
         lines = bloom_skill.read_text().splitlines()
