@@ -421,33 +421,25 @@ class PackageValidationTests(unittest.TestCase):
         self.run_script('package-skill.sh')
         self.assertEqual(bloom_archive.read_bytes(), before)
 
-    def test_brief_workflow_is_scoped_to_rainbrand_skill(self):
-        rainbrand = ' '.join(
-            (self.root / 'skills/rainbrand/SKILL.md').read_text().split())
-        bloom = ' '.join(
-            (self.root / 'skills/bloom/SKILL.md').read_text().split())
+    def test_brief_world_model_complements_live_tool_contracts(self):
+        rainbrand = (self.root / 'skills/rainbrand/SKILL.md').read_text()
+        section = rainbrand.split('## Use brand context\n', 1)[1]
+        bloom = (self.root / 'skills/bloom/SKILL.md').read_text()
 
-        workflow = (
-            'A Brief is the Brand guidance and files Rainbrand selects for your work.',
-            'call `create_brief`',
-            'call `get_brief` with the returned `brief_id` and `wait: true`',
-            "Inspect the completed Brief's guidance and assets before using them.",
-            'pass the completed `brief_id` unchanged',
-            "use the Brief's returned guidance and assets directly",
-            'A Review does not require a Brief.',
+        self.assertEqual(section.count('\n### '), 3)
+        for concept in ('Brand', 'Brief', 'Review', 'native input', 'authority'):
+            with self.subTest(concept=concept):
+                self.assertIn(concept, section)
+
+        duplicated_contract_details = (
+            '`create_brief`', '`get_brief`', '`get_brand`', '`view_files`',
+            '`brief_id`', '`wait: true`', 'GET /brands', 'For a specific task',
         )
-        for guidance in workflow:
-            with self.subTest(guidance=guidance):
-                self.assertIn(guidance, rainbrand)
+        for detail in duplicated_contract_details:
+            with self.subTest(duplicated_detail=detail):
+                self.assertNotIn(detail, section)
 
-        self.assertLess(rainbrand.index('call `create_brief`'),
-                        rainbrand.index('call `get_brief`'))
-        self.assertLess(rainbrand.index('call `get_brief`'),
-                        rainbrand.index("Inspect the completed Brief's guidance"))
-
-        for field in ('`create_brief`', '`get_brief`', '`brief_id`', '`wait: true`'):
-            with self.subTest(legacy_field=field):
-                self.assertNotIn(field, bloom)
+        self.assertNotIn('Choose a Brand, Brief, or Review', bloom)
 
     def test_skill_versions_can_move_independently(self):
         bloom_skill = self.root / 'skills/bloom/SKILL.md'
