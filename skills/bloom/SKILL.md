@@ -4,7 +4,7 @@ description: Use Bloom to onboard and edit brands, get brand context for a task,
 license: MIT
 metadata:
   author: Bloom
-  version: "1.1.9"
+  version: "1.1.10"
   url: https://docs.trybloom.ai/mcp/getting-started
 ---
 
