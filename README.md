@@ -1,3 +1,5 @@
+![Rainbrand](assets/rainbrand-social-preview.png)
+
 # Rainbrand
 
 Rainbrand is the brand layer for agents. It turns a brand's identity, guidance,
