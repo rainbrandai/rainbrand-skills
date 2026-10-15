@@ -5,6 +5,11 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ## [Unreleased]
 
+### Changed
+
+- Maintain `bloom.skill.zip` as an independent source, allowing Rainbrand
+  guidance to evolve without changing the compatibility Skill.
+
 ## [1.1.9] - 2026-10-14
 
 ### Added
