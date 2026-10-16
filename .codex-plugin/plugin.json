@@ -57,10 +57,10 @@
               "expected_behavior": "Uses the known Stripe Brand session ID to return the accessible brand's current status, profile, root guidance, navigation, files, and version metadata."
             },
             {
-              "description": "Onboard a brand, discovering the creation tool even when it is not initially loaded. Run in a controlled reviewer account with credits.",
-              "prompt": "onboard the shakeshack website please",
-              "tools_triggered": "onboard_brand",
-              "expected_behavior": "Searches the connected Rainbrand tool catalog when onboard_brand is not loaded, then calls onboard_brand with Shake Shack's official public website as a website source, using the personal workspace by default. Does not treat the loaded tool subset as the full connection or replace connected tool discovery with browser-based docs lookup. Reports the actual result, follows the live tool contract for pending work or duplicate sources, and does not claim the brand is ready before verifying its state."
+              "description": "Confirm which Rainbrand account is connected.",
+              "prompt": "Which Rainbrand account am I connected to?",
+              "tools_triggered": "get_account",
+              "expected_behavior": "Calls get_account and returns the connected account's name and email."
             },
             {
               "description": "List the workspaces accessible to the connected Rainbrand account.",
