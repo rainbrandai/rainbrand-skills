@@ -9,7 +9,7 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ### Changed
 
-- Refocus the provider listings on shared brand context, onboarding, and
+- Refocus the Codex store listing on shared brand context, onboarding, and
   updates, without presenting media generation as the plugin's definition.
 - Shorten the Codex capability labels so the directory displays them clearly.
 

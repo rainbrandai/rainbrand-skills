@@ -1,6 +1,6 @@
 ---
 name: rainbrand
-description: Use Rainbrand to onboard and edit brands and retrieve shared brand context.
+description: Use Rainbrand to onboard and edit brands, get brand context for a task, and generate images, videos, and audio.
 license: MIT
 metadata:
   author: Rainbrand

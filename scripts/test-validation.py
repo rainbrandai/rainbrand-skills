@@ -442,13 +442,12 @@ class PackageValidationTests(unittest.TestCase):
             self.assertEqual(
                 archive.read('bloom/SKILL.md'), bloom_skill.read_bytes())
 
-    def test_skill_description_focuses_on_brand_context(self):
+    def test_skill_description_keeps_correct_media_scope(self):
         skill = (self.root / 'skills/rainbrand/SKILL.md').read_text()
         description = next(line for line in skill.splitlines() if line.startswith('description: '))
         description = description.split(': ', 1)[1]
-        self.assertIn('shared brand context', description)
-        for media_type in ('images', 'videos', 'audio', 'SVG'):
-            self.assertNotIn(media_type, description)
+        self.assertIn('images, videos, and audio', description)
+        self.assertNotIn('SVG', description)
         for provider, manifest in self.manifests.items():
             with self.subTest(provider=provider):
                 self.assertEqual(manifest['description'], description)
