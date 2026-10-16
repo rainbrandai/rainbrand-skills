@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Rainbrand",
     "shortDescription": "The brand layer for agents.",
-    "longDescription": "Rainbrand is the brand layer for agents. It maintains a brand's identity, guidance, and assets as shared context that agents and products can use and update as the brand evolves.\n\nConnect your Rainbrand account to onboard or edit brands and get the context relevant to your work. Available actions depend on the live tools connected to your account.",
+    "longDescription": "Rainbrand is the brand layer for agents. It maintains a brand's identity, guidance, and assets as shared context that agents and products can use and update as the brand evolves.\n\nConnect your Rainbrand account to onboard or edit brands and get the context relevant to your work.",
     "developerName": "Rainbrand",
     "category": "Creativity",
     "capabilities": [
@@ -90,7 +90,7 @@
             }
           ]
         },
-        "demo_recording_url": "https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4",
+        "demo_recording_url": "https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.11/rainbrand-review-walkthrough-v1.1.11.mp4",
         "commerce": false,
         "commerce_description": "Rainbrand does not sell products or process payments through this plugin."
       },
