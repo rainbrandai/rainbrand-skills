@@ -16,14 +16,11 @@
     ],
     "interface": {
       "shortDescription": "The brand layer for agents.",
-      "longDescription": "Rainbrand is the brand layer for agents. It maintains a brand's identity, guidance, and assets as shared context that agents and products can use and update.\n\nConnect your Rainbrand account to create or onboard brands, retrieve their context, and prepare changes. A Brand Skill contains the versioned context for one brand; this plugin supplies general operating guidance and declares the Rainbrand connection.\n\nThe connected account's live tools, descriptions, and schemas define the capabilities available and how to use them. The packaged Skill provides stable guidance for discovery and brand work without assuming which capabilities an account has.",
+      "longDescription": "Rainbrand is the brand layer for agents. It maintains a brand's identity, guidance, and assets as shared context that agents and products can use and update as the brand evolves.\n\nConnect your Rainbrand account to onboard or edit brands and get the context relevant to your work. Available actions depend on the live tools connected to your account.",
       "category": "Creativity",
       "capabilities": [
-        "Brand context and Brand Skills",
-        "Brand creation and onboarding",
-        "Brand context updates",
-        "Account and workspace information",
-        "Generation tools available to your account"
+        "Shared brand context",
+        "Brand onboarding and updates"
       ],
       "defaultPrompt": [
         "Show me the brands I can access.",
@@ -85,7 +82,7 @@
       "commerce_description": "Rainbrand does not sell products or process payments through this plugin."
     },
     "publication": {
-      "release_notes": "Replaces the portable root package with provider-native Codex/OpenAI, Claude, and Cursor distributions. The canonical Skill and hosted MCP endpoint are unchanged."
+      "release_notes": "Refines the plugin listing around shared brand context, brand onboarding, and updates."
     }
   },
   "cursor": {

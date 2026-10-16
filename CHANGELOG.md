@@ -5,6 +5,19 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ## [Unreleased]
 
+## [1.1.11] - 2026-10-16
+
+### Changed
+
+- Refocus the provider listings on shared brand context, onboarding, and
+  updates, without presenting media generation as the plugin's definition.
+- Shorten the Codex capability labels so the directory displays them clearly.
+
+### Fixed
+
+- Allow the repository's social preview image in source validation without
+  adding it to provider packages.
+
 ## [1.1.10] - 2026-10-15
 
 ### Changed

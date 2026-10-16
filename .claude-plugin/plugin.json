@@ -1,8 +1,8 @@
 {
   "name": "rainbrand",
   "displayName": "Rainbrand",
-  "version": "1.1.10",
-  "description": "Use Rainbrand to onboard and edit brands, get brand context for a task, and generate images, videos, and audio.",
+  "version": "1.1.11",
+  "description": "Use Rainbrand to onboard and edit brands and retrieve shared brand context.",
   "author": {
     "name": "Rainbrand",
     "url": "https://www.rainbrand.com/"
