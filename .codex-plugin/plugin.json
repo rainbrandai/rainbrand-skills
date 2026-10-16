@@ -1,6 +1,6 @@
 {
   "name": "rainbrand",
-  "version": "1.1.10",
+  "version": "1.1.11",
   "description": "Use Rainbrand to onboard and edit brands, get brand context for a task, and generate images, videos, and audio.",
   "author": {
     "name": "Rainbrand",
@@ -20,15 +20,12 @@
   "interface": {
     "displayName": "Rainbrand",
     "shortDescription": "The brand layer for agents.",
-    "longDescription": "Rainbrand is the brand layer for agents. It maintains a brand's identity, guidance, and assets as shared context that agents and products can use and update.\n\nConnect your Rainbrand account to create or onboard brands, retrieve their context, and prepare changes. A Brand Skill contains the versioned context for one brand; this plugin supplies general operating guidance and declares the Rainbrand connection.\n\nThe connected account's live tools, descriptions, and schemas define the capabilities available and how to use them. The packaged Skill provides stable guidance for discovery and brand work without assuming which capabilities an account has.",
+    "longDescription": "Rainbrand is the brand layer for agents. It maintains a brand's identity, guidance, and assets as shared context that agents and products can use and update as the brand evolves.\n\nConnect your Rainbrand account to onboard or edit brands and get the context relevant to your work.",
     "developerName": "Rainbrand",
     "category": "Creativity",
     "capabilities": [
-      "Brand context and Brand Skills",
-      "Brand creation and onboarding",
-      "Brand context updates",
-      "Account and workspace information",
-      "Generation tools available to your account"
+      "Shared brand context",
+      "Brand onboarding and updates"
     ],
     "websiteURL": "https://www.rainbrand.com/",
     "supportURL": "https://www.rainbrand.com/faq/",
@@ -60,10 +57,10 @@
               "expected_behavior": "Uses the known Stripe Brand session ID to return the accessible brand's current status, profile, root guidance, navigation, files, and version metadata."
             },
             {
-              "description": "Onboard a brand, discovering the creation tool even when it is not initially loaded. Run in a controlled reviewer account with credits.",
-              "prompt": "onboard the shakeshack website please",
-              "tools_triggered": "onboard_brand",
-              "expected_behavior": "Searches the connected Rainbrand tool catalog when onboard_brand is not loaded, then calls onboard_brand with Shake Shack's official public website as a website source, using the personal workspace by default. Does not treat the loaded tool subset as the full connection or replace connected tool discovery with browser-based docs lookup. Reports the actual result, follows the live tool contract for pending work or duplicate sources, and does not claim the brand is ready before verifying its state."
+              "description": "Confirm which Rainbrand account is connected.",
+              "prompt": "Which Rainbrand account am I connected to?",
+              "tools_triggered": "get_account",
+              "expected_behavior": "Calls get_account and returns the connected account's name and email."
             },
             {
               "description": "List the workspaces accessible to the connected Rainbrand account.",
@@ -93,12 +90,12 @@
             }
           ]
         },
-        "demo_recording_url": "https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.2/rainbrand-review-walkthrough-v1.1.2.mp4",
+        "demo_recording_url": "https://github.com/trybloomai/rainbrand-skills/releases/download/v1.1.11/rainbrand-review-walkthrough-v1.1.11.mp4",
         "commerce": false,
         "commerce_description": "Rainbrand does not sell products or process payments through this plugin."
       },
       "publication": {
-        "release_notes": "Replaces the portable root package with provider-native Codex/OpenAI, Claude, and Cursor distributions. The canonical Skill and hosted MCP endpoint are unchanged."
+        "release_notes": "Refines the plugin listing around shared brand context, brand onboarding, and updates."
       }
     }
   }

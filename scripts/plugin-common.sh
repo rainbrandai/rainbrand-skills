@@ -101,11 +101,19 @@ validate_source_file() {
 }
 
 validate_source_directory() {
-  local directory="$1" expected="$2" file
+  local directory="$1" file expected allowed
+  shift
   [[ -d "$repo_root/$directory" && ! -L "$repo_root/$directory" ]] || fail "Expected a regular source directory: $directory"
   for file in "$repo_root/$directory"/*; do
     [[ -e "$file" ]] || continue
-    [[ "${file##*/}" == "$expected" ]] || fail "Unexpected source in $directory: ${file##*/}"
+    allowed=0
+    for expected in "$@"; do
+      if [[ "${file##*/}" == "$expected" ]]; then
+        allowed=1
+        break
+      fi
+    done
+    [[ "$allowed" == 1 ]] || fail "Unexpected source in $directory: ${file##*/}"
   done
 }
 
@@ -190,7 +198,7 @@ validate_plugin_sources() {
   validate_source_file plugin-copy.json
   validate_source_file plugin-config.json
   validate_source_file scripts/render-plugin-manifests.py
-  validate_source_directory assets rainbrand-logo.png
+  validate_source_directory assets rainbrand-logo.png rainbrand-social-preview.png
   validate_source_directory .codex-plugin plugin.json
   validate_source_directory .claude-plugin plugin.json
   validate_source_directory .cursor-plugin plugin.json
