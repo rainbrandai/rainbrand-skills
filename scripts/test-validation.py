@@ -49,6 +49,7 @@ EXPECTED_RELEASE_ASSETS = {
     'rainbrand.skill.zip', 'bloom.skill.zip',
     *(spec['archive'] for spec in PLUGIN_SPECS.values()),
 }
+CLAUDE_DIRECTORY = 'claude'
 
 
 class PackageValidationTests(unittest.TestCase):
@@ -351,6 +352,34 @@ class PackageValidationTests(unittest.TestCase):
         with zipfile.ZipFile(self.root / 'dist/bloom.skill.zip') as archive:
             self.assertEqual(archive.namelist(), ['bloom/SKILL.md'])
             self.assertEqual(archive.read('bloom/SKILL.md'), bloom_skill)
+
+    def test_claude_directory_matches_package_sources(self):
+        directory = self.root / CLAUDE_DIRECTORY
+        expected = [
+            '.claude-plugin/plugin.json', '.mcp.json', *SHARED_MEMBERS,
+        ]
+        actual = sorted(
+            str(path.relative_to(directory))
+            for path in directory.rglob('*')
+            if path.is_file()
+        )
+        self.assertEqual(actual, sorted(expected))
+        for target in expected:
+            self.assertEqual(
+                (directory / target).read_bytes(),
+                (self.root / target).read_bytes(),
+            )
+
+    def test_claude_directory_drift_is_rejected_and_repaired(self):
+        readme = self.root / CLAUDE_DIRECTORY / 'README.md'
+        readme.write_text('Stale projection.\n')
+        self.run_script('validate-claude-plugin.sh', succeeds=False)
+        self.run_script('package-claude-plugin.sh')
+        self.assertEqual(readme.read_bytes(), (self.root / 'README.md').read_bytes())
+
+        extra = self.root / CLAUDE_DIRECTORY / 'extra.txt'
+        extra.write_text('Unexpected file.\n')
+        self.run_script('validate-claude-plugin.sh', succeeds=False)
 
     def test_corrupt_or_unexpected_members_fail_each_provider(self):
         for provider, spec in PLUGIN_SPECS.items():

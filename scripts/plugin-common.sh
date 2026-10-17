@@ -2,6 +2,7 @@
 
 # Shared Rainbrand source, archive, and deterministic packaging checks.
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+claude_directory_root="$repo_root/claude"
 export LC_ALL=C
 export TZ=UTC
 
@@ -268,6 +269,69 @@ build_deterministic_zip() {
     cd "$stage_dir"
     zip -X -q "$candidate" "${archive_files[@]}"
   )
+}
+
+render_file_tree() {
+  local source_root="$1" target_root="$2" mapping source_file target_file
+  shift 2
+  [[ "$source_root" != "$target_root" ]] || fail "Source and target trees must differ"
+  mkdir -p "$target_root"
+  for mapping in "$@"; do
+    source_file="${mapping%%::*}"
+    target_file="${mapping#*::}"
+    if [[ "$target_file" == "$mapping" ]]; then
+      target_file="$source_file"
+    fi
+    mkdir -p "$target_root/$(dirname "$target_file")"
+    cp "$source_root/$source_file" "$target_root/$target_file"
+    chmod 644 "$target_root/$target_file"
+  done
+}
+
+render_claude_directory() {
+  render_file_tree "$repo_root" "$claude_directory_root" "${claude_plugin_files[@]}"
+}
+
+validate_file_tree_contents() {
+  local target_root="$1" source_root="$2" validation_dir="$3"
+  local mapping source_file target_file file
+  shift 3
+  [[ -d "$target_root" && ! -L "$target_root" ]] || \
+    fail "Missing regular directory: $target_root"
+  [[ -z "$(find "$target_root" ! -type d ! -type f -print -quit)" ]] || \
+    fail "Directory members must be regular files: $target_root"
+  mkdir -p "$validation_dir"
+  : > "$validation_dir/expected"
+  for mapping in "$@"; do
+    target_file="${mapping#*::}"
+    if [[ "$target_file" == "$mapping" ]]; then
+      target_file="${mapping%%::*}"
+    fi
+    printf '%s\n' "$target_file" >> "$validation_dir/expected"
+  done
+  sort -o "$validation_dir/expected" "$validation_dir/expected"
+  : > "$validation_dir/actual"
+  while IFS= read -r file; do
+    printf '%s\n' "${file#"$target_root/"}" >> "$validation_dir/actual"
+  done < <(find "$target_root" -type f -print)
+  sort -o "$validation_dir/actual" "$validation_dir/actual"
+  cmp -s "$validation_dir/expected" "$validation_dir/actual" || \
+    fail "Directory must contain exactly the allowed files: $target_root"
+  for mapping in "$@"; do
+    source_file="${mapping%%::*}"
+    target_file="${mapping#*::}"
+    if [[ "$target_file" == "$mapping" ]]; then
+      target_file="$source_file"
+    fi
+    cmp -s "$source_root/$source_file" "$target_root/$target_file" || \
+      fail "Directory differs from source: $source_file -> $target_file"
+  done
+}
+
+validate_claude_directory() {
+  local validation_dir="$1"
+  validate_file_tree_contents "$claude_directory_root" "$repo_root" "$validation_dir" \
+    "${claude_plugin_files[@]}"
 }
 
 validate_zip_contents() {
