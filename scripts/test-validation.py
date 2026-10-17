@@ -50,6 +50,10 @@ EXPECTED_RELEASE_ASSETS = {
     *(spec['archive'] for spec in PLUGIN_SPECS.values()),
 }
 CLAUDE_DIRECTORY = 'claude'
+CLAUDE_DIRECTORY_MEMBERS = [
+    '.claude-plugin/plugin.json', '.mcp.json',
+    *(member for member in SHARED_MEMBERS if member != 'CHANGELOG.md'),
+]
 
 
 class PackageValidationTests(unittest.TestCase):
@@ -355,16 +359,13 @@ class PackageValidationTests(unittest.TestCase):
 
     def test_claude_directory_matches_package_sources(self):
         directory = self.root / CLAUDE_DIRECTORY
-        expected = [
-            '.claude-plugin/plugin.json', '.mcp.json', *SHARED_MEMBERS,
-        ]
         actual = sorted(
             str(path.relative_to(directory))
             for path in directory.rglob('*')
             if path.is_file()
         )
-        self.assertEqual(actual, sorted(expected))
-        for target in expected:
+        self.assertEqual(actual, sorted(CLAUDE_DIRECTORY_MEMBERS))
+        for target in CLAUDE_DIRECTORY_MEMBERS:
             self.assertEqual(
                 (directory / target).read_bytes(),
                 (self.root / target).read_bytes(),
