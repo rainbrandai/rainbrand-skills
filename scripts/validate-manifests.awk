@@ -243,7 +243,6 @@ END {
         exact(root, "name", expected_name)
         required_string(root, "displayName", "displayName", 0)
         exact(root, "version", expected_version)
-        exact(root, "description", expected_description)
         required_string(root, "description", "description", 500)
         author = member(root, "author", "object")
         closed(author, "name url", "author")
@@ -282,7 +281,7 @@ END {
         exact(root, "skills", "./skills/")
         exact(root, "mcpServers", "./mcp.json")
     } else if (kind == "codex-mcp" || kind == "claude-mcp" || kind == "cursor-mcp") {
-        closed(root, "mcpServers", (kind == "codex-mcp" ? ".mcp.json" : "mcp.json"))
+        closed(root, "mcpServers", (kind == "cursor-mcp" ? "mcp.json" : ".mcp.json"))
         servers = member(root, "mcpServers", "object")
         if (size[servers] != 1 || !(servers SUBSEP expected_name in children)) abort("Expected exactly one MCP server named " expected_name)
         server = member(servers, expected_name, "object")

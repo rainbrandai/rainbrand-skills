@@ -7,6 +7,9 @@
     "privacyPolicyUrl": "https://www.rainbrand.com/privacy/",
     "termsOfServiceUrl": "https://www.rainbrand.com/terms/"
   },
+  "claude": {
+    "description": "Rainbrand is the brand layer for agents. It maintains shared brand context that Claude can retrieve, apply, and update as the brand evolves."
+  },
   "codex": {
     "keywords": [
       "rainbrand",

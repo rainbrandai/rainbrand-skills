@@ -22,16 +22,21 @@ The renderer writes fully expanded provider manifests and MCP configurations.
 The generated JSON must contain literal values because plugin clients do not
 resolve repository variables.
 
-Two generated MCP files are required because the provider contracts differ:
+Three generated MCP files are required because the provider contracts differ:
 
 | Output | Used by | Contract |
 | --- | --- | --- |
-| `.mcp.json` | Codex and ChatGPT | Codex compatibility shape; the remote server entry contains `url` |
-| `mcp.json` | Cursor and the Claude package builder | Native shape; the remote server entry contains `type: "http"` and `url` |
+| `.codex-plugin/.mcp.json` | Codex and ChatGPT package source | Codex compatibility shape; packaged as root `.mcp.json` |
+| `.mcp.json` | Claude | Native shape; the remote server entry contains `type: "http"` and `url` |
+| `mcp.json` | Cursor | Native shape; the remote server entry contains `type: "http"` and `url` |
 
-The Claude archive maps `mcp.json` to `.mcp.json`. Both generated files get
-their server name and endpoint from `plugin-config.json`; neither is an
-independent source of truth.
+The Codex archive maps `.codex-plugin/.mcp.json` to root `.mcp.json`. All three
+generated files get their server name and endpoint from `plugin-config.json`;
+none is an independent source of truth.
+
+The repository root is the source folder submitted to Anthropic's plugin
+directory. In Anthropic's developer portal, submit this repository with plugin
+path `.`.
 
 ## Build and validate
 

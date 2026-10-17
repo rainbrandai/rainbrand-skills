@@ -14,12 +14,12 @@ shared_plugin_files=(
 )
 codex_plugin_files=(
   .codex-plugin/plugin.json
-  .mcp.json
+  .codex-plugin/.mcp.json::.mcp.json
   "${shared_plugin_files[@]}"
 )
 claude_plugin_files=(
   .claude-plugin/plugin.json
-  mcp.json::.mcp.json
+  .mcp.json
   "${shared_plugin_files[@]}"
 )
 cursor_plugin_files=(
@@ -62,9 +62,9 @@ validate_regular_zip_members() {
   ' || fail "Archive members must be regular files: $1"
 }
 
-# Skill frontmatter is the canonical source for shared package identity and
-# description. Provider manifests repeat those values only because each format
-# requires them; validation below rejects any copy that drifts.
+# Skill frontmatter is the canonical source for shared package identity and the
+# default package description. Provider-specific listing copy lives in
+# plugin-copy.json; validation below rejects any generated file that drifts.
 read_skill_metadata() {
   awk -v quote="'" -v expected_name="$2" -v expected_author="$3" -v expected_url="$4" '
     function scalar(text,    first) {
@@ -199,10 +199,11 @@ validate_plugin_sources() {
   validate_source_file plugin-config.json
   validate_source_file scripts/render-plugin-manifests.py
   validate_source_directory assets rainbrand-logo.png rainbrand-social-preview.png
-  validate_source_directory .codex-plugin plugin.json
+  validate_source_directory .codex-plugin plugin.json .mcp.json
   validate_source_directory .claude-plugin plugin.json
   validate_source_directory .cursor-plugin plugin.json
   validate_source_file .codex-plugin/plugin.json
+  validate_source_file .codex-plugin/.mcp.json
   validate_source_file .claude-plugin/plugin.json
   validate_source_file .cursor-plugin/plugin.json
   validate_source_file .mcp.json
@@ -218,13 +219,13 @@ validate_plugin_sources() {
       manifest_kind=codex-plugin
       manifest_file=.codex-plugin/plugin.json
       mcp_kind=codex-mcp
-      mcp_file=.mcp.json
+      mcp_file=.codex-plugin/.mcp.json
       ;;
     claude)
       manifest_kind=claude-plugin
       manifest_file=.claude-plugin/plugin.json
       mcp_kind=claude-mcp
-      mcp_file=mcp.json
+      mcp_file=.mcp.json
       ;;
     cursor)
       manifest_kind=cursor-plugin

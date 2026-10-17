@@ -16,8 +16,9 @@ OUTPUT_PATHS = {
     'codex': ROOT / '.codex-plugin/plugin.json',
     'claude': ROOT / '.claude-plugin/plugin.json',
     'cursor': ROOT / '.cursor-plugin/plugin.json',
-    'codex-mcp': ROOT / '.mcp.json',
-    'native-mcp': ROOT / 'mcp.json',
+    'codex-mcp': ROOT / '.codex-plugin/.mcp.json',
+    'claude-mcp': ROOT / '.mcp.json',
+    'cursor-mcp': ROOT / 'mcp.json',
 }
 
 
@@ -79,6 +80,7 @@ def build_outputs():
     copy = read_json(COPY_PATH)
     config = read_json(CONFIG_PATH)
     shared = copy['shared']
+    claude = copy['claude']
     codex = copy['codex']
     cursor = copy['cursor']
     mcp = config['mcp']
@@ -130,7 +132,7 @@ def build_outputs():
         'name': skill['name'],
         'displayName': shared['displayName'],
         'version': skill['version'],
-        'description': skill['description'],
+        'description': claude['description'],
         'author': author,
         **repository_fields,
         'icon': './assets/rainbrand-logo.png',
@@ -177,7 +179,8 @@ def build_outputs():
         'claude': claude_manifest,
         'cursor': cursor_manifest,
         'codex-mcp': codex_mcp,
-        'native-mcp': native_mcp,
+        'claude-mcp': native_mcp,
+        'cursor-mcp': native_mcp,
     }
 
 

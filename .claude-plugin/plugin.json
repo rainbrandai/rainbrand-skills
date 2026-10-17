@@ -2,7 +2,7 @@
   "name": "rainbrand",
   "displayName": "Rainbrand",
   "version": "1.1.11",
-  "description": "Use Rainbrand to onboard and edit brands, get brand context for a task, and generate images, videos, and audio.",
+  "description": "Rainbrand is the brand layer for agents. It maintains shared brand context that Claude can retrieve, apply, and update as the brand evolves.",
   "author": {
     "name": "Rainbrand",
     "url": "https://www.rainbrand.com/"
