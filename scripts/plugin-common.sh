@@ -23,6 +23,10 @@ claude_plugin_files=(
   .mcp.json
   "${shared_plugin_files[@]}"
 )
+claude_directory_files=()
+for file in "${claude_plugin_files[@]}"; do
+  [[ "$file" == CHANGELOG.md ]] || claude_directory_files+=("$file")
+done
 cursor_plugin_files=(
   .cursor-plugin/plugin.json
   mcp.json
@@ -289,7 +293,7 @@ render_file_tree() {
 }
 
 render_claude_directory() {
-  render_file_tree "$repo_root" "$claude_directory_root" "${claude_plugin_files[@]}"
+  render_file_tree "$repo_root" "$claude_directory_root" "${claude_directory_files[@]}"
 }
 
 validate_file_tree_contents() {
@@ -331,7 +335,7 @@ validate_file_tree_contents() {
 validate_claude_directory() {
   local validation_dir="$1"
   validate_file_tree_contents "$claude_directory_root" "$repo_root" "$validation_dir" \
-    "${claude_plugin_files[@]}"
+    "${claude_directory_files[@]}"
 }
 
 validate_zip_contents() {
