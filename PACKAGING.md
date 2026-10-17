@@ -33,6 +33,13 @@ The Claude archive maps `mcp.json` to `.mcp.json`. Both generated files get
 their server name and endpoint from `plugin-config.json`; neither is an
 independent source of truth.
 
+The committed `claude/` directory is the source folder submitted to Anthropic's
+plugin directory. It contains the same files and bytes as the Claude archive,
+including the native MCP configuration at `claude/.mcp.json`. The Claude
+package builder refreshes this projection, and validation rejects drift or
+extra files. In Anthropic's developer portal, submit this repository with the
+plugin path `claude`.
+
 ## Build and validate
 
 Build all release assets and run their validators:
