@@ -5,6 +5,13 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ## [Unreleased]
 
+## [1.1.12] - 2026-10-17
+
+### Changed
+
+- Make the repository root directly usable by Anthropic's plugin directory and
+  focus the Claude listing on shared brand context rather than media generation.
+
 ## [1.1.11] - 2026-10-16
 
 ### Changed
