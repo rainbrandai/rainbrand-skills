@@ -24,6 +24,7 @@ PLUGIN_SPECS = {
         'archive': 'rainbrand.codex-plugin.zip',
         'manifest': '.codex-plugin/plugin.json',
         'mcp': '.mcp.json',
+        'mcp_source': '.codex-plugin/.mcp.json',
         'package': 'package-codex-plugin.sh',
         'validate': 'validate-codex-plugin.sh',
     },
@@ -31,6 +32,7 @@ PLUGIN_SPECS = {
         'archive': 'rainbrand.claude-plugin.zip',
         'manifest': '.claude-plugin/plugin.json',
         'mcp': '.mcp.json',
+        'mcp_source': '.mcp.json',
         'package': 'package-claude-plugin.sh',
         'validate': 'validate-claude-plugin.sh',
     },
@@ -38,6 +40,7 @@ PLUGIN_SPECS = {
         'archive': 'rainbrand.cursor-plugin.zip',
         'manifest': '.cursor-plugin/plugin.json',
         'mcp': 'mcp.json',
+        'mcp_source': 'mcp.json',
         'package': 'package-cursor-plugin.sh',
         'validate': 'validate-cursor-plugin.sh',
     },
@@ -46,7 +49,6 @@ EXPECTED_RELEASE_ASSETS = {
     'rainbrand.skill.zip', 'bloom.skill.zip',
     *(spec['archive'] for spec in PLUGIN_SPECS.values()),
 }
-CLAUDE_DIRECTORY = 'claude'
 
 
 class PackageValidationTests(unittest.TestCase):
@@ -61,8 +63,9 @@ class PackageValidationTests(unittest.TestCase):
         }
         self.plugin_copy = json.loads((self.root / 'plugin-copy.json').read_text())
         self.plugin_config = json.loads((self.root / 'plugin-config.json').read_text())
-        self.codex_mcp = json.loads((self.root / '.mcp.json').read_text())
-        self.native_mcp = json.loads((self.root / 'mcp.json').read_text())
+        self.codex_mcp = json.loads((self.root / '.codex-plugin/.mcp.json').read_text())
+        self.claude_mcp = json.loads((self.root / '.mcp.json').read_text())
+        self.cursor_mcp = json.loads((self.root / 'mcp.json').read_text())
         self.run_script('package-release.sh')
 
     def run_script(self, name, *args, succeeds=True, env=None):
@@ -135,6 +138,7 @@ class PackageValidationTests(unittest.TestCase):
         interface = self.plugin_copy['codex']['interface']
         review = self.plugin_copy['codex']['review']
         prose = [
+            self.plugin_copy['claude']['description'],
             interface['shortDescription'], interface['longDescription'],
             *interface['capabilities'], *interface['defaultPrompt'],
             review['commerce_description'],
@@ -161,9 +165,13 @@ class PackageValidationTests(unittest.TestCase):
         skill_path.write_text(skill_path.read_text().replace(original_description, replacement, 1))
         self.run_renderer('--check', succeeds=False)
         self.run_renderer('--write')
-        for spec in PLUGIN_SPECS.values():
+        for provider, spec in PLUGIN_SPECS.items():
             manifest = json.loads((self.root / spec['manifest']).read_text())
-            self.assertEqual(manifest['description'], replacement)
+            expected = (
+                self.plugin_copy['claude']['description']
+                if provider == 'claude' else replacement
+            )
+            self.assertEqual(manifest['description'], expected)
 
     def test_mcp_outputs_share_one_endpoint_source(self):
         endpoint = self.plugin_config['mcp']['endpoint']
@@ -172,14 +180,16 @@ class PackageValidationTests(unittest.TestCase):
         self.assertEqual(
             self.codex_mcp['mcpServers']['rainbrand']['url'], endpoint)
         self.assertEqual(
-            self.native_mcp['mcpServers']['rainbrand']['url'], endpoint)
+            self.claude_mcp['mcpServers']['rainbrand']['url'], endpoint)
+        self.assertEqual(
+            self.cursor_mcp['mcpServers']['rainbrand']['url'], endpoint)
 
         changed_config = copy.deepcopy(self.plugin_config)
         changed_config['mcp']['endpoint'] = 'https://mcp.example.com/mcp'
         self.write_json('plugin-config.json', changed_config)
         self.run_renderer('--check', succeeds=False)
         self.run_script('package-codex-plugin.sh')
-        for path in ('.mcp.json', 'mcp.json'):
+        for path in ('.codex-plugin/.mcp.json', '.mcp.json', 'mcp.json'):
             generated = json.loads((self.root / path).read_text())
             self.assertEqual(
                 generated['mcpServers']['rainbrand']['url'],
@@ -259,11 +269,11 @@ class PackageValidationTests(unittest.TestCase):
         ]
         for changed in codex_changes:
             with self.subTest(changed=changed):
-                self.write_json('.mcp.json', changed)
+                self.write_json('.codex-plugin/.mcp.json', changed)
                 self.run_script('validate-codex-plugin.sh', succeeds=False)
-                self.write_json('.mcp.json', self.codex_mcp)
+                self.write_json('.codex-plugin/.mcp.json', self.codex_mcp)
 
-        native_server = self.native_mcp['mcpServers']['rainbrand']
+        native_server = self.claude_mcp['mcpServers']['rainbrand']
         native_changes = [
             {}, {'mcpServers': []}, {'mcpServers': {}},
             {'mcpServers': {'other': native_server}},
@@ -272,16 +282,21 @@ class PackageValidationTests(unittest.TestCase):
             {'mcpServers': {'rainbrand': {**native_server, 'url': 'https://example.com/mcp'}}},
             {'mcpServers': {'rainbrand': {**native_server, 'headers': {'Authorization': 'invalid'}}}},
         ]
-        for changed in native_changes:
-            with self.subTest(changed=changed):
-                self.write_json('mcp.json', changed)
-                self.run_script('validate-claude-plugin.sh', succeeds=False)
-                self.run_script('validate-cursor-plugin.sh', succeeds=False)
-                self.write_json('mcp.json', self.native_mcp)
+        for path, validator, original in (
+            ('.mcp.json', 'validate-claude-plugin.sh', self.claude_mcp),
+            ('mcp.json', 'validate-cursor-plugin.sh', self.cursor_mcp),
+        ):
+            for changed in native_changes:
+                with self.subTest(path=path, changed=changed):
+                    self.write_json(path, changed)
+                    self.run_script(validator, succeeds=False)
+                    self.write_json(path, original)
 
         codex_url = self.codex_mcp['mcpServers']['rainbrand']['url']
-        native_url = self.native_mcp['mcpServers']['rainbrand']['url']
-        self.assertEqual(codex_url, native_url)
+        claude_url = self.claude_mcp['mcpServers']['rainbrand']['url']
+        cursor_url = self.cursor_mcp['mcpServers']['rainbrand']['url']
+        self.assertEqual(codex_url, claude_url)
+        self.assertEqual(codex_url, cursor_url)
         self.assertEqual(codex_url, self.plugin_config['mcp']['endpoint'])
 
     def test_root_portable_manifest_is_retired(self):
@@ -324,8 +339,8 @@ class PackageValidationTests(unittest.TestCase):
                     self.assertEqual(member.date_time, (1980, 1, 1, 0, 0, 0))
                     self.assertEqual(stat.S_IMODE(member.external_attr >> 16), 0o644)
                     source = member.filename
-                    if provider == 'claude' and source == '.mcp.json':
-                        source = 'mcp.json'
+                    if source == spec['mcp']:
+                        source = spec['mcp_source']
                     self.assertEqual(archive.read(member), (self.root / source).read_bytes())
 
         with zipfile.ZipFile(self.root / 'dist/rainbrand.skill.zip') as archive:
@@ -336,35 +351,6 @@ class PackageValidationTests(unittest.TestCase):
         with zipfile.ZipFile(self.root / 'dist/bloom.skill.zip') as archive:
             self.assertEqual(archive.namelist(), ['bloom/SKILL.md'])
             self.assertEqual(archive.read('bloom/SKILL.md'), bloom_skill)
-
-    def test_claude_directory_matches_package_sources(self):
-        directory = self.root / CLAUDE_DIRECTORY
-        expected = [
-            '.claude-plugin/plugin.json', '.mcp.json', *SHARED_MEMBERS,
-        ]
-        actual = sorted(
-            str(path.relative_to(directory))
-            for path in directory.rglob('*')
-            if path.is_file()
-        )
-        self.assertEqual(actual, sorted(expected))
-        for target in expected:
-            source = 'mcp.json' if target == '.mcp.json' else target
-            self.assertEqual(
-                (directory / target).read_bytes(),
-                (self.root / source).read_bytes(),
-            )
-
-    def test_claude_directory_drift_is_rejected_and_repaired(self):
-        readme = self.root / CLAUDE_DIRECTORY / 'README.md'
-        readme.write_text('Stale projection.\n')
-        self.run_script('validate-claude-plugin.sh', succeeds=False)
-        self.run_script('package-claude-plugin.sh')
-        self.assertEqual(readme.read_bytes(), (self.root / 'README.md').read_bytes())
-
-        extra = self.root / CLAUDE_DIRECTORY / 'extra.txt'
-        extra.write_text('Unexpected file.\n')
-        self.run_script('validate-claude-plugin.sh', succeeds=False)
 
     def test_corrupt_or_unexpected_members_fail_each_provider(self):
         for provider, spec in PLUGIN_SPECS.items():
@@ -478,9 +464,12 @@ class PackageValidationTests(unittest.TestCase):
         description = description.split(': ', 1)[1]
         self.assertIn('images, videos, and audio', description)
         self.assertNotIn('SVG', description)
-        for provider, manifest in self.manifests.items():
+        for provider in ('codex', 'cursor'):
             with self.subTest(provider=provider):
-                self.assertEqual(manifest['description'], description)
+                self.assertEqual(self.manifests[provider]['description'], description)
+        claude_description = self.manifests['claude']['description']
+        self.assertEqual(claude_description, self.plugin_copy['claude']['description'])
+        self.assertNotIn('generat', claude_description.lower())
 
     def test_branding_compatibility_prose_is_scoped(self):
         readme = self.root / 'README.md'

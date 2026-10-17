@@ -6,7 +6,6 @@ export LC_ALL=C
 source "$(dirname "${BASH_SOURCE[0]}")/plugin-common.sh"
 require_commands awk zip unzip cmp sort mktemp od tr
 render_plugin_manifests
-render_claude_directory
 validate_plugin_sources claude
 
 package_dir="$(mktemp -d "${TMPDIR:-/tmp}/rainbrand-claude-plugin.XXXXXX")"

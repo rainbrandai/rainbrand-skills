@@ -2,7 +2,6 @@
 
 # Shared Rainbrand source, archive, and deterministic packaging checks.
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-claude_directory_root="$repo_root/claude"
 export LC_ALL=C
 export TZ=UTC
 
@@ -15,12 +14,12 @@ shared_plugin_files=(
 )
 codex_plugin_files=(
   .codex-plugin/plugin.json
-  .mcp.json
+  .codex-plugin/.mcp.json::.mcp.json
   "${shared_plugin_files[@]}"
 )
 claude_plugin_files=(
   .claude-plugin/plugin.json
-  mcp.json::.mcp.json
+  .mcp.json
   "${shared_plugin_files[@]}"
 )
 cursor_plugin_files=(
@@ -63,9 +62,9 @@ validate_regular_zip_members() {
   ' || fail "Archive members must be regular files: $1"
 }
 
-# Skill frontmatter is the canonical source for shared package identity and
-# description. Provider manifests repeat those values only because each format
-# requires them; validation below rejects any copy that drifts.
+# Skill frontmatter is the canonical source for shared package identity and the
+# default package description. Provider-specific listing copy lives in
+# plugin-copy.json; validation below rejects any generated file that drifts.
 read_skill_metadata() {
   awk -v quote="'" -v expected_name="$2" -v expected_author="$3" -v expected_url="$4" '
     function scalar(text,    first) {
@@ -200,10 +199,11 @@ validate_plugin_sources() {
   validate_source_file plugin-config.json
   validate_source_file scripts/render-plugin-manifests.py
   validate_source_directory assets rainbrand-logo.png rainbrand-social-preview.png
-  validate_source_directory .codex-plugin plugin.json
+  validate_source_directory .codex-plugin plugin.json .mcp.json
   validate_source_directory .claude-plugin plugin.json
   validate_source_directory .cursor-plugin plugin.json
   validate_source_file .codex-plugin/plugin.json
+  validate_source_file .codex-plugin/.mcp.json
   validate_source_file .claude-plugin/plugin.json
   validate_source_file .cursor-plugin/plugin.json
   validate_source_file .mcp.json
@@ -219,13 +219,13 @@ validate_plugin_sources() {
       manifest_kind=codex-plugin
       manifest_file=.codex-plugin/plugin.json
       mcp_kind=codex-mcp
-      mcp_file=.mcp.json
+      mcp_file=.codex-plugin/.mcp.json
       ;;
     claude)
       manifest_kind=claude-plugin
       manifest_file=.claude-plugin/plugin.json
       mcp_kind=claude-mcp
-      mcp_file=mcp.json
+      mcp_file=.mcp.json
       ;;
     cursor)
       manifest_kind=cursor-plugin
@@ -268,69 +268,6 @@ build_deterministic_zip() {
     cd "$stage_dir"
     zip -X -q "$candidate" "${archive_files[@]}"
   )
-}
-
-render_file_tree() {
-  local source_root="$1" target_root="$2" mapping source_file target_file
-  shift 2
-  [[ "$source_root" != "$target_root" ]] || fail "Source and target trees must differ"
-  mkdir -p "$target_root"
-  for mapping in "$@"; do
-    source_file="${mapping%%::*}"
-    target_file="${mapping#*::}"
-    if [[ "$target_file" == "$mapping" ]]; then
-      target_file="$source_file"
-    fi
-    mkdir -p "$target_root/$(dirname "$target_file")"
-    cp "$source_root/$source_file" "$target_root/$target_file"
-    chmod 644 "$target_root/$target_file"
-  done
-}
-
-render_claude_directory() {
-  render_file_tree "$repo_root" "$claude_directory_root" "${claude_plugin_files[@]}"
-}
-
-validate_file_tree_contents() {
-  local target_root="$1" source_root="$2" validation_dir="$3"
-  local mapping source_file target_file file
-  shift 3
-  [[ -d "$target_root" && ! -L "$target_root" ]] || \
-    fail "Missing regular directory: $target_root"
-  [[ -z "$(find "$target_root" ! -type d ! -type f -print -quit)" ]] || \
-    fail "Directory members must be regular files: $target_root"
-  mkdir -p "$validation_dir"
-  : > "$validation_dir/expected"
-  for mapping in "$@"; do
-    target_file="${mapping#*::}"
-    if [[ "$target_file" == "$mapping" ]]; then
-      target_file="${mapping%%::*}"
-    fi
-    printf '%s\n' "$target_file" >> "$validation_dir/expected"
-  done
-  sort -o "$validation_dir/expected" "$validation_dir/expected"
-  : > "$validation_dir/actual"
-  while IFS= read -r file; do
-    printf '%s\n' "${file#"$target_root/"}" >> "$validation_dir/actual"
-  done < <(find "$target_root" -type f -print)
-  sort -o "$validation_dir/actual" "$validation_dir/actual"
-  cmp -s "$validation_dir/expected" "$validation_dir/actual" || \
-    fail "Directory must contain exactly the allowed files: $target_root"
-  for mapping in "$@"; do
-    source_file="${mapping%%::*}"
-    target_file="${mapping#*::}"
-    if [[ "$target_file" == "$mapping" ]]; then
-      target_file="$source_file"
-    fi
-    cmp -s "$source_root/$source_file" "$target_root/$target_file" || \
-      fail "Directory differs from source: $source_file -> $target_file"
-  done
-}
-
-validate_claude_directory() {
-  local validation_dir="$1"
-  validate_file_tree_contents "$claude_directory_root" "$repo_root" "$validation_dir" \
-    "${claude_plugin_files[@]}"
 }
 
 validate_zip_contents() {
