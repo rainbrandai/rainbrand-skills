@@ -1,7 +1,7 @@
 {
   "name": "rainbrand",
   "displayName": "Rainbrand",
-  "version": "1.1.12",
+  "version": "1.1.13",
   "description": "Rainbrand is the brand layer for agents. It maintains shared brand context that Claude can retrieve, apply, and update as the brand evolves.",
   "author": {
     "name": "Rainbrand",

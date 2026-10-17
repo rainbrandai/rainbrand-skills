@@ -5,6 +5,13 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ## [Unreleased]
 
+## [1.1.13] - 2026-10-17
+
+### Changed
+
+- Add a dedicated Claude submission folder so Anthropic scans the installable
+  plugin instead of cross-platform release artifacts and test infrastructure.
+
 ## [1.1.12] - 2026-10-17
 
 ### Changed
