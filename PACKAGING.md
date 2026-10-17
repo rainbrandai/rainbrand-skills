@@ -34,9 +34,12 @@ The Codex archive maps `.codex-plugin/.mcp.json` to root `.mcp.json`. All three
 generated files get their server name and endpoint from `plugin-config.json`;
 none is an independent source of truth.
 
-The repository root is the source folder submitted to Anthropic's plugin
-directory. In Anthropic's developer portal, submit this repository with plugin
-path `.`.
+The committed `claude/` directory is the source folder submitted to Anthropic's
+plugin directory. It contains the same files and bytes as the Claude archive,
+including the native MCP configuration at `claude/.mcp.json`. The Claude
+package builder refreshes this projection, and validation rejects drift or
+extra files. In Anthropic's developer portal, submit this repository with the
+plugin path `claude` so its scanner only reads the Claude bundle.
 
 ## Build and validate
 
