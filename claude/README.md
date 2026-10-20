@@ -44,7 +44,7 @@ In any compatible MCP client, connect directly to
 To install the Rainbrand Skill without the MCP connection:
 
 ```bash
-npx skills add trybloomai/rainbrand-skills --skill rainbrand
+npx skills add https://docs.rainbrand.com --skill rainbrand
 ```
 
 You can also download [`rainbrand.skill.zip`](dist/rainbrand.skill.zip).

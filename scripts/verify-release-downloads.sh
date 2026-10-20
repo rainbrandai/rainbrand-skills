@@ -13,12 +13,7 @@ for asset in \
   rainbrand.claude-plugin.zip \
   rainbrand.cursor-plugin.zip \
   bloom.skill.zip; do
-  if [[ "$asset" == bloom.skill.zip ]]; then
-    repository=bloom-skills
-  else
-    repository=rainbrand-skills
-  fi
-  url="https://github.com/trybloomai/$repository/releases/latest/download/$asset"
+  url="https://github.com/rainbrandai/rainbrand-skills/releases/latest/download/$asset"
   curl --fail --location --silent --show-error --proto '=https' --proto-redir '=https' \
     --output "$download_dir/$asset" "$url"
   echo "Downloaded $url (followed redirects)"

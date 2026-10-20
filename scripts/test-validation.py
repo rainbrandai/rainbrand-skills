@@ -546,11 +546,11 @@ class PackageValidationTests(unittest.TestCase):
         self.run_script('verify-release-downloads.sh', env=environment)
         calls = [json.loads(line) for line in log.read_text().splitlines()]
         self.assertEqual([call[-1] for call in calls], [
-            'https://github.com/trybloomai/rainbrand-skills/releases/latest/download/rainbrand.skill.zip',
-            'https://github.com/trybloomai/rainbrand-skills/releases/latest/download/rainbrand.codex-plugin.zip',
-            'https://github.com/trybloomai/rainbrand-skills/releases/latest/download/rainbrand.claude-plugin.zip',
-            'https://github.com/trybloomai/rainbrand-skills/releases/latest/download/rainbrand.cursor-plugin.zip',
-            'https://github.com/trybloomai/bloom-skills/releases/latest/download/bloom.skill.zip',
+            'https://github.com/rainbrandai/rainbrand-skills/releases/latest/download/rainbrand.skill.zip',
+            'https://github.com/rainbrandai/rainbrand-skills/releases/latest/download/rainbrand.codex-plugin.zip',
+            'https://github.com/rainbrandai/rainbrand-skills/releases/latest/download/rainbrand.claude-plugin.zip',
+            'https://github.com/rainbrandai/rainbrand-skills/releases/latest/download/rainbrand.cursor-plugin.zip',
+            'https://github.com/rainbrandai/rainbrand-skills/releases/latest/download/bloom.skill.zip',
         ])
         for call in calls:
             self.assertIn('--fail', call)
