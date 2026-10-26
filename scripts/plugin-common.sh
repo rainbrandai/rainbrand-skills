@@ -28,12 +28,12 @@ for file in "${claude_plugin_files[@]}"; do
   [[ "$file" == CHANGELOG.md ]] || claude_directory_files+=("$file")
 done
 cursor_plugin_files=(
-  .cursor-plugin/plugin.json
-  mcp.json
+  .cursor-plugin/archive-plugin.json::.cursor-plugin/plugin.json
+  .mcp.json::mcp.json
   "${shared_plugin_files[@]}"
 )
 skill_files=(rainbrand/SKILL.md)
-bloom_skill_files=(bloom/SKILL.md)
+bloom_skill_files=(compatibility/bloom.md::bloom/SKILL.md)
 release_files=(
   rainbrand.skill.zip
   bloom.skill.zip
@@ -155,30 +155,29 @@ validate_bloom_branding() {
 validate_shared_sources() {
   local file skill_metadata skill_name skill_version skill_description
   local bloom_metadata bloom_name bloom_version bloom_description release_version
-  for file in skills/rainbrand/SKILL.md skills/bloom/SKILL.md README.md CHANGELOG.md LICENSE; do
+  for file in skills/rainbrand/SKILL.md compatibility/bloom.md README.md CHANGELOG.md LICENSE; do
     validate_source_file "$file"
   done
   [[ -d "$repo_root/skills" && ! -L "$repo_root/skills" ]] || \
     fail "Expected a regular source directory: skills"
   validate_source_directory skills/rainbrand SKILL.md
-  validate_source_directory skills/bloom SKILL.md
+  validate_source_directory compatibility bloom.md
   for file in "$repo_root"/skills/*; do
     case "$file" in
-      "$repo_root/skills/rainbrand"|"$repo_root/skills/bloom") ;;
-      *) fail "Expected only the Rainbrand and Bloom Skills" ;;
+      "$repo_root/skills/rainbrand") ;;
+      *) fail "Expected only the Rainbrand Skill in discovery" ;;
     esac
   done
-  [[ ! -e "$repo_root/plugin.json" && ! -L "$repo_root/plugin.json" ]] || fail "Root plugin.json is retired"
 
   validate_rainbrand_branding skills/rainbrand/SKILL.md README.md CHANGELOG.md LICENSE
-  validate_bloom_branding skills/bloom/SKILL.md
+  validate_bloom_branding compatibility/bloom.md
   skill_metadata="$(read_skill_metadata "$repo_root/skills/rainbrand/SKILL.md" rainbrand Rainbrand \
     https://docs.rainbrand.com/mcp/getting-started)"
   IFS=$'\t' read -r skill_name skill_version skill_description <<< "$skill_metadata"
   [[ "$skill_name" == rainbrand ]] || fail "Skill name must match its directory: rainbrand"
   [[ "$skill_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || \
     fail "Expected a stable semantic Rainbrand Skill version"
-  bloom_metadata="$(read_skill_metadata "$repo_root/skills/bloom/SKILL.md" bloom Bloom \
+  bloom_metadata="$(read_skill_metadata "$repo_root/compatibility/bloom.md" bloom Bloom \
     https://docs.trybloom.ai/mcp/getting-started)"
   IFS=$'\t' read -r bloom_name bloom_version bloom_description <<< "$bloom_metadata"
   [[ "$bloom_name" == bloom ]] || fail "Skill name must match its directory: bloom"
@@ -205,12 +204,14 @@ validate_plugin_sources() {
   validate_source_file scripts/render-plugin-manifests.py
   validate_source_directory assets rainbrand-logo.png rainbrand-social-preview.png
   validate_source_directory .codex-plugin plugin.json .mcp.json
-  validate_source_directory .claude-plugin plugin.json
-  validate_source_directory .cursor-plugin plugin.json
+  validate_source_directory .claude-plugin plugin.json marketplace.json
+  validate_source_directory .cursor-plugin plugin.json archive-plugin.json
   validate_source_file .codex-plugin/plugin.json
   validate_source_file .codex-plugin/.mcp.json
   validate_source_file .claude-plugin/plugin.json
   validate_source_file .cursor-plugin/plugin.json
+  validate_source_file .cursor-plugin/archive-plugin.json
+  validate_source_file plugin.json
   validate_source_file .mcp.json
   validate_source_file mcp.json
   # The bundled image is a 148x148 PNG, comfortably above each provider's
@@ -236,7 +237,7 @@ validate_plugin_sources() {
       manifest_kind=cursor-plugin
       manifest_file=.cursor-plugin/plugin.json
       mcp_kind=cursor-mcp
-      mcp_file=mcp.json
+      mcp_file=.mcp.json
       ;;
     *) fail "Unknown plugin provider: $provider" ;;
   esac
@@ -251,6 +252,11 @@ validate_plugin_sources() {
     -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/$manifest_file"
   awk -v kind="$mcp_kind" -v expected_name="$skill_name" \
     -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/$mcp_file"
+  if [[ "$provider" == cursor ]]; then
+    awk -v kind=cursor-archive -v expected_name="$skill_name" -v expected_version="$skill_version" \
+      -v expected_description="$skill_description" \
+      -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/.cursor-plugin/archive-plugin.json"
+  fi
 }
 
 build_deterministic_zip() {
@@ -373,5 +379,5 @@ validate_zip_contents() {
 validate_skill_archives() {
   local archive_dir="$1" validation_dir="$2"
   validate_zip_contents "$archive_dir/rainbrand.skill.zip" "$repo_root/skills" "$validation_dir" "${skill_files[@]}"
-  validate_zip_contents "$archive_dir/bloom.skill.zip" "$repo_root/skills" "$validation_dir" "${bloom_skill_files[@]}"
+  validate_zip_contents "$archive_dir/bloom.skill.zip" "$repo_root" "$validation_dir" "${bloom_skill_files[@]}"
 }

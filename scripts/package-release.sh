@@ -2,6 +2,7 @@
 
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/plugin-common.sh"
+render_plugin_manifests
 "$repo_root/scripts/package-skill.sh"
 "$repo_root/scripts/package-codex-plugin.sh"
 "$repo_root/scripts/package-claude-plugin.sh"

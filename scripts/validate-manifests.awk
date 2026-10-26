@@ -238,6 +238,27 @@ END {
         publication = member(openai, "publication", "object")
         closed(publication, "release_notes", "com.openai.publication")
         required_string(publication, "release_notes", "release_notes", 4000)
+    } else if (kind == "portable-plugin") {
+        closed(root, "$schema name version description author homepage repository license keywords extensions", "plugin.json")
+        exact(root, "$schema", "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json")
+        exact(root, "name", expected_name)
+        exact(root, "version", expected_version)
+        exact(root, "description", expected_description)
+        author = member(root, "author", "object")
+        closed(author, "name url", "author")
+        required_string(author, "name", "author name", 0)
+        required_string(author, "url", "author URL", 0)
+        required_string(root, "homepage", "homepage", 0)
+        required_string(root, "repository", "repository", 0)
+        required_string(root, "license", "license", 0)
+        string_array(member(root, "keywords", "array"), "keywords", 20, 120)
+        extensions = member(root, "extensions", "object")
+        closed(extensions, "com.openai", "extensions")
+        openai = member(extensions, "com.openai", "object")
+        closed(openai, "interface review publication", "com.openai")
+        member(openai, "interface", "object")
+        member(openai, "review", "object")
+        member(openai, "publication", "object")
     } else if (kind == "claude-plugin") {
         closed(root, "name displayName version description author homepage repository license icon documentationUrl supportUrl privacyPolicyUrl termsOfServiceUrl", ".claude-plugin/plugin.json")
         exact(root, "name", expected_name)
@@ -256,7 +277,7 @@ END {
         required_string(root, "supportUrl", "supportUrl", 0)
         required_string(root, "privacyPolicyUrl", "privacyPolicyUrl", 0)
         required_string(root, "termsOfServiceUrl", "termsOfServiceUrl", 0)
-    } else if (kind == "cursor-plugin") {
+    } else if (kind == "cursor-plugin" || kind == "cursor-archive") {
         closed(root, "name displayName version minClientVersions description author homepage repository license logo keywords category tags skills mcpServers", ".cursor-plugin/plugin.json")
         exact(root, "name", expected_name)
         required_string(root, "displayName", "displayName", 0)
@@ -279,9 +300,12 @@ END {
         tags = member(root, "tags", "array")
         string_array(tags, "tags", 20, 120)
         exact(root, "skills", "./skills/")
-        exact(root, "mcpServers", "./mcp.json")
-    } else if (kind == "codex-mcp" || kind == "claude-mcp" || kind == "cursor-mcp") {
-        closed(root, "mcpServers", (kind == "cursor-mcp" ? "mcp.json" : ".mcp.json"))
+        exact(root, "mcpServers", (kind == "cursor-archive" ? "./mcp.json" : "./.mcp.json"))
+    } else if (kind == "codex-mcp" || kind == "claude-mcp" || kind == "cursor-mcp" || kind == "portable-mcp") {
+        if (kind == "portable-mcp") {
+            closed(root, "$schema mcpServers", "mcp.json")
+            exact(root, "$schema", "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json")
+        } else closed(root, "mcpServers", ".mcp.json")
         servers = member(root, "mcpServers", "object")
         if (size[servers] != 1 || !(servers SUBSEP expected_name in children)) abort("Expected exactly one MCP server named " expected_name)
         server = member(servers, expected_name, "object")
@@ -289,7 +313,7 @@ END {
             closed(server, "url", "Rainbrand MCP server")
         } else {
             closed(server, "type url", "Rainbrand MCP server")
-            exact(server, "type", "http")
+            exact(server, "type", (kind == "portable-mcp" ? "streamable-http" : "http"))
         }
         endpoint = required_string(server, "url", "MCP endpoint", 2048)
         if (endpoint !~ /^https:\/\/[^\/?#[:space:]@\\]+([\/?#][^[:space:]\\]*)?$/)
