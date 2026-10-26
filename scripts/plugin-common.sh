@@ -34,7 +34,7 @@ cursor_plugin_files=(
   "${shared_plugin_files[@]}"
 )
 skill_files=(rainbrand/SKILL.md)
-bloom_skill_files=(bloom/SKILL.md)
+bloom_skill_files=(compatibility/bloom.md::bloom/SKILL.md)
 portable_content_files=(skills/rainbrand/SKILL.md LICENSE assets/rainbrand-logo.png)
 portable_directory_files=(
   portable/plugin.json::plugin.json
@@ -163,30 +163,30 @@ validate_bloom_branding() {
 validate_shared_sources() {
   local file skill_metadata skill_name skill_version skill_description
   local bloom_metadata bloom_name bloom_version bloom_description release_version
-  for file in skills/rainbrand/SKILL.md skills/bloom/SKILL.md README.md CHANGELOG.md LICENSE; do
+  for file in skills/rainbrand/SKILL.md compatibility/bloom.md README.md CHANGELOG.md LICENSE; do
     validate_source_file "$file"
   done
   [[ -d "$repo_root/skills" && ! -L "$repo_root/skills" ]] || \
     fail "Expected a regular source directory: skills"
   validate_source_directory skills/rainbrand SKILL.md
-  validate_source_directory skills/bloom SKILL.md
+  validate_source_directory compatibility bloom.md
   for file in "$repo_root"/skills/*; do
     case "$file" in
-      "$repo_root/skills/rainbrand"|"$repo_root/skills/bloom") ;;
-      *) fail "Expected only the Rainbrand and Bloom Skills" ;;
+      "$repo_root/skills/rainbrand") ;;
+      *) fail "Expected only the Rainbrand Skill in discovery" ;;
     esac
   done
   [[ ! -e "$repo_root/plugin.json" && ! -L "$repo_root/plugin.json" ]] || fail "Root plugin.json is retired"
 
   validate_rainbrand_branding skills/rainbrand/SKILL.md README.md CHANGELOG.md LICENSE
-  validate_bloom_branding skills/bloom/SKILL.md
+  validate_bloom_branding compatibility/bloom.md
   skill_metadata="$(read_skill_metadata "$repo_root/skills/rainbrand/SKILL.md" rainbrand Rainbrand \
     https://docs.rainbrand.com/mcp/getting-started)"
   IFS=$'\t' read -r skill_name skill_version skill_description <<< "$skill_metadata"
   [[ "$skill_name" == rainbrand ]] || fail "Skill name must match its directory: rainbrand"
   [[ "$skill_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || \
     fail "Expected a stable semantic Rainbrand Skill version"
-  bloom_metadata="$(read_skill_metadata "$repo_root/skills/bloom/SKILL.md" bloom Bloom \
+  bloom_metadata="$(read_skill_metadata "$repo_root/compatibility/bloom.md" bloom Bloom \
     https://docs.trybloom.ai/mcp/getting-started)"
   IFS=$'\t' read -r bloom_name bloom_version bloom_description <<< "$bloom_metadata"
   [[ "$bloom_name" == bloom ]] || fail "Skill name must match its directory: bloom"
@@ -391,5 +391,5 @@ validate_zip_contents() {
 validate_skill_archives() {
   local archive_dir="$1" validation_dir="$2"
   validate_zip_contents "$archive_dir/rainbrand.skill.zip" "$repo_root/skills" "$validation_dir" "${skill_files[@]}"
-  validate_zip_contents "$archive_dir/bloom.skill.zip" "$repo_root/skills" "$validation_dir" "${bloom_skill_files[@]}"
+  validate_zip_contents "$archive_dir/bloom.skill.zip" "$repo_root" "$validation_dir" "${bloom_skill_files[@]}"
 }

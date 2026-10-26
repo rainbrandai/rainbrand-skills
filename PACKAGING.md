@@ -7,8 +7,9 @@ lives in `README.md`.
 
 - `skills/rainbrand/SKILL.md` owns the Rainbrand package name, version,
   description, license, author, and documentation URL.
-- `skills/bloom/SKILL.md` independently owns those fields and guidance for the
-  standalone Bloom compatibility Skill.
+- `compatibility/bloom.md` independently owns those fields and guidance for
+  the legacy Bloom download. It is outside Skill discovery; the builder maps
+  its unchanged bytes to `bloom/SKILL.md` in `bloom.skill.zip`.
 - `plugin-copy.json` owns provider listing, review, and publication copy.
 - `plugin-config.json` owns the Rainbrand MCP server name and endpoint.
 
