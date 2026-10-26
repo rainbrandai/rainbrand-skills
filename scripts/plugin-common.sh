@@ -3,7 +3,6 @@
 # Shared Rainbrand source, archive, and deterministic packaging checks.
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 claude_directory_root="$repo_root/claude"
-portable_directory_root="$repo_root/portable"
 export LC_ALL=C
 export TZ=UTC
 
@@ -29,19 +28,12 @@ for file in "${claude_plugin_files[@]}"; do
   [[ "$file" == CHANGELOG.md ]] || claude_directory_files+=("$file")
 done
 cursor_plugin_files=(
-  .cursor-plugin/plugin.json
-  mcp.json
+  .cursor-plugin/archive-plugin.json::.cursor-plugin/plugin.json
+  .mcp.json::mcp.json
   "${shared_plugin_files[@]}"
 )
 skill_files=(rainbrand/SKILL.md)
 bloom_skill_files=(compatibility/bloom.md::bloom/SKILL.md)
-portable_content_files=(skills/rainbrand/SKILL.md LICENSE assets/rainbrand-logo.png)
-portable_directory_files=(
-  portable/plugin.json::plugin.json
-  portable/mcp.json::mcp.json
-  portable/README.md::README.md
-  "${portable_content_files[@]}"
-)
 release_files=(
   rainbrand.skill.zip
   bloom.skill.zip
@@ -176,7 +168,6 @@ validate_shared_sources() {
       *) fail "Expected only the Rainbrand Skill in discovery" ;;
     esac
   done
-  [[ ! -e "$repo_root/plugin.json" && ! -L "$repo_root/plugin.json" ]] || fail "Root plugin.json is retired"
 
   validate_rainbrand_branding skills/rainbrand/SKILL.md README.md CHANGELOG.md LICENSE
   validate_bloom_branding compatibility/bloom.md
@@ -214,11 +205,13 @@ validate_plugin_sources() {
   validate_source_directory assets rainbrand-logo.png rainbrand-social-preview.png
   validate_source_directory .codex-plugin plugin.json .mcp.json
   validate_source_directory .claude-plugin plugin.json marketplace.json
-  validate_source_directory .cursor-plugin plugin.json
+  validate_source_directory .cursor-plugin plugin.json archive-plugin.json
   validate_source_file .codex-plugin/plugin.json
   validate_source_file .codex-plugin/.mcp.json
   validate_source_file .claude-plugin/plugin.json
   validate_source_file .cursor-plugin/plugin.json
+  validate_source_file .cursor-plugin/archive-plugin.json
+  validate_source_file plugin.json
   validate_source_file .mcp.json
   validate_source_file mcp.json
   # The bundled image is a 148x148 PNG, comfortably above each provider's
@@ -244,7 +237,7 @@ validate_plugin_sources() {
       manifest_kind=cursor-plugin
       manifest_file=.cursor-plugin/plugin.json
       mcp_kind=cursor-mcp
-      mcp_file=mcp.json
+      mcp_file=.mcp.json
       ;;
     *) fail "Unknown plugin provider: $provider" ;;
   esac
@@ -259,6 +252,11 @@ validate_plugin_sources() {
     -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/$manifest_file"
   awk -v kind="$mcp_kind" -v expected_name="$skill_name" \
     -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/$mcp_file"
+  if [[ "$provider" == cursor ]]; then
+    awk -v kind=cursor-archive -v expected_name="$skill_name" -v expected_version="$skill_version" \
+      -v expected_description="$skill_description" \
+      -f "$repo_root/scripts/validate-manifests.awk" "$repo_root/.cursor-plugin/archive-plugin.json"
+  fi
 }
 
 build_deterministic_zip() {
@@ -304,10 +302,6 @@ render_claude_directory() {
   render_file_tree "$repo_root" "$claude_directory_root" "${claude_directory_files[@]}"
 }
 
-render_portable_directory() {
-  render_file_tree "$repo_root" "$portable_directory_root" "${portable_content_files[@]}"
-}
-
 validate_file_tree_contents() {
   local target_root="$1" source_root="$2" validation_dir="$3"
   local mapping source_file target_file file
@@ -348,12 +342,6 @@ validate_claude_directory() {
   local validation_dir="$1"
   validate_file_tree_contents "$claude_directory_root" "$repo_root" "$validation_dir" \
     "${claude_directory_files[@]}"
-}
-
-validate_portable_directory() {
-  local validation_dir="$1"
-  validate_file_tree_contents "$portable_directory_root" "$repo_root" "$validation_dir" \
-    "${portable_directory_files[@]}"
 }
 
 validate_zip_contents() {

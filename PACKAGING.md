@@ -23,17 +23,23 @@ The renderer writes fully expanded provider manifests and MCP configurations.
 The generated JSON must contain literal values because plugin clients do not
 resolve repository variables.
 
-Three generated MCP files are required because the provider contracts differ:
+Generated MCP files keep portable and native connection formats separate:
 
 | Output | Used by | Contract |
 | --- | --- | --- |
 | `.codex-plugin/.mcp.json` | Codex and ChatGPT package source | Codex compatibility shape; packaged as root `.mcp.json` |
-| `.mcp.json` | Claude | Native shape; the remote server entry contains `type: "http"` and `url` |
-| `mcp.json` | Cursor | Native shape; the remote server entry contains `type: "http"` and `url` |
+| `.mcp.json` | Claude and Cursor repository installs | Native shape; the remote server entry contains `type: "http"` and `url` |
+| `mcp.json` | Portable Agent Plugins clients | Portable schema with `type: "streamable-http"` and `url` |
 
 The Codex archive maps `.codex-plugin/.mcp.json` to root `.mcp.json`. All three
 generated files get their server name and endpoint from `plugin-config.json`;
 none is an independent source of truth.
+
+Cursor's repository manifest explicitly reads `./.mcp.json`. Its generated
+`archive-plugin.json` retains the ZIP's original `./mcp.json` reference; the
+builder maps that manifest and the native MCP file to their existing archive
+paths. This preserves the submitted Cursor ZIP byte-for-byte without asking a
+native loader to interpret the portable configuration.
 
 The committed `claude/` directory is the source folder submitted to Anthropic's
 plugin directory. It contains the runtime and listing files from the Claude
@@ -80,25 +86,27 @@ Provider references:
 
 ## Portable Agent Plugins package
 
-Use `portable/` as the plugin root for clients and registries that accept
-[Agent Plugins 1.0](https://agent-plugins.org/specification). Where a registry
-supports a repository-relative source path, set it to `portable` and pin the
-reviewed commit. Check each registry's intake requirements before submitting;
-this package does not imply a public listing.
+The repository root is the plugin root for clients and registries that accept
+[Agent Plugins 1.0](https://agent-plugins.org/specification). Submit that root
+at a reviewed commit. Check each registry's intake requirements before
+submitting; publishing these files does not imply a public listing.
 
-The existing renderer generates `portable/plugin.json` and `portable/mcp.json`
-from the same identity, listing metadata, and endpoint as the native packages.
-`scripts/package-release.sh` also copies the canonical Rainbrand Skill, licence
-and icon into this directory. Run `scripts/validate-portable-plugin.sh` to
-check the complete directory, including exact Skill and asset bytes.
+The existing renderer generates `plugin.json` and portable `mcp.json` from the
+same identity, listing metadata, and endpoint as the native packages. Run
+`scripts/validate-portable-plugin.sh` to check their contracts and freshness.
+Only the Rainbrand Skill lives under `skills/`, so portable discovery does not
+offer the legacy Bloom Skill. The native archives and Anthropic's submitted
+`claude/` directory retain their existing contents. No portable ZIP is added
+to the five release assets.
 
-Keep the portable package in its own directory. Its MCP configuration requires
-`type: "streamable-http"`, while the root `mcp.json` is Cursor's native
-`type: "http"` configuration. Portable discovery also loads every Skill under
-its own `skills/`; this directory contains only Rainbrand, preserving the
-standalone Bloom compatibility Skill outside this package. The three native
-archives and Anthropic's submitted `claude/` directory keep their existing
-contents. No portable ZIP is added to the five existing release assets.
+## Legacy Bloom download
+
+Keep `compatibility/bloom.md` as ordinary packaging input, not a discoverable
+`SKILL.md`. The builder maps its unchanged bytes into `bloom.skill.zip` as
+`bloom/SKILL.md`. Its version is independent of Rainbrand's version. Keep this
+ZIP and its existing release download URLs available while legacy support
+continues, without adding it to customer-facing install instructions or new
+plugin catalogs. Previously indexed third-party listings need separate cleanup.
 
 ## Claude Code marketplace
 

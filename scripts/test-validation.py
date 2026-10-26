@@ -39,8 +39,9 @@ PLUGIN_SPECS = {
     'cursor': {
         'archive': 'rainbrand.cursor-plugin.zip',
         'manifest': '.cursor-plugin/plugin.json',
+        'manifest_source': '.cursor-plugin/archive-plugin.json',
         'mcp': 'mcp.json',
-        'mcp_source': 'mcp.json',
+        'mcp_source': '.mcp.json',
         'package': 'package-cursor-plugin.sh',
         'validate': 'validate-cursor-plugin.sh',
     },
@@ -70,7 +71,7 @@ class PackageValidationTests(unittest.TestCase):
         self.plugin_config = json.loads((self.root / 'plugin-config.json').read_text())
         self.codex_mcp = json.loads((self.root / '.codex-plugin/.mcp.json').read_text())
         self.claude_mcp = json.loads((self.root / '.mcp.json').read_text())
-        self.cursor_mcp = json.loads((self.root / 'mcp.json').read_text())
+        self.cursor_mcp = json.loads((self.root / '.mcp.json').read_text())
         self.run_script('package-release.sh')
 
     def run_script(self, name, *args, succeeds=True, env=None):
@@ -120,7 +121,7 @@ class PackageValidationTests(unittest.TestCase):
             ],
             'cursor': [
                 ('version', '9.9.9'), ('name', 'other'), ('skills', './other/'),
-                ('mcpServers', './.mcp.json'), ('category', 'other'),
+                ('mcpServers', './mcp.json'), ('category', 'other'),
                 ('logo', './assets/rainbrand-logo.png'),
                 ('minClientVersions', {'cursor': '0.0.0'}),
                 ('description', 'Different plugin copy.'),
@@ -289,7 +290,7 @@ class PackageValidationTests(unittest.TestCase):
         ]
         for path, validator, original in (
             ('.mcp.json', 'validate-claude-plugin.sh', self.claude_mcp),
-            ('mcp.json', 'validate-cursor-plugin.sh', self.cursor_mcp),
+            ('.mcp.json', 'validate-cursor-plugin.sh', self.cursor_mcp),
         ):
             for changed in native_changes:
                 with self.subTest(path=path, changed=changed):
@@ -304,17 +305,19 @@ class PackageValidationTests(unittest.TestCase):
         self.assertEqual(codex_url, cursor_url)
         self.assertEqual(codex_url, self.plugin_config['mcp']['endpoint'])
 
-    def test_root_portable_manifest_is_retired(self):
-        self.assertFalse((self.root / 'plugin.json').exists())
-        (self.root / 'plugin.json').write_text('{}\n')
-        self.run_script('package-skill.sh', succeeds=False)
-        for spec in PLUGIN_SPECS.values():
-            self.run_script(spec['package'], succeeds=False)
+    def test_root_portable_manifest_is_required_and_repaired(self):
+        path = self.root / 'plugin.json'
+        original = path.read_bytes()
+        path.unlink()
+        self.run_script('validate-release.sh', succeeds=False)
+        self.run_script('package-release.sh')
+        self.assertEqual(path.read_bytes(), original)
+        path.write_text('{"name":"rainbrand","name":"other"}\n')
+        self.run_script('validate-portable-plugin.sh', succeeds=False)
 
-    def test_portable_package_is_self_contained_and_matches_native_identity(self):
+    def test_root_portable_package_matches_native_identity(self):
         self.run_script('validate-portable-plugin.sh')
-        portable = self.root / 'portable'
-        manifest = json.loads((portable / 'plugin.json').read_text())
+        manifest = json.loads((self.root / 'plugin.json').read_text())
         codex = self.manifests['codex']
         for key in ('name', 'version', 'description', 'author', 'homepage', 'repository', 'license'):
             self.assertEqual(manifest[key], codex[key])
@@ -322,36 +325,50 @@ class PackageValidationTests(unittest.TestCase):
             'interface': codex['interface'], **codex['extensions']['com.openai'],
         })
         self.assertEqual(
-            [path.name for path in (portable / 'skills').iterdir()], ['rainbrand'],
+            [path.name for path in (self.root / 'skills').iterdir()], ['rainbrand'],
         )
-        mcp = json.loads((portable / 'mcp.json').read_text())
+        mcp = json.loads((self.root / 'mcp.json').read_text())
         self.assertEqual(mcp['mcpServers']['rainbrand'], {
             'type': 'streamable-http', 'url': self.plugin_config['mcp']['endpoint'],
         })
         self.assertEqual(self.cursor_mcp['mcpServers']['rainbrand']['type'], 'http')
 
-    def test_portable_projection_rejects_drift_extras_and_symlinks(self):
-        skill = self.root / 'portable/skills/rainbrand/SKILL.md'
-        skill.write_text('Stale Skill copy\n')
-        self.run_script('validate-portable-plugin.sh', succeeds=False)
-        self.run_script('package-release.sh')
-        self.run_script('validate-portable-plugin.sh')
-        extra = self.root / 'portable/skills/bloom/SKILL.md'
+    def test_root_portable_rejects_extra_skills_and_symlinks(self):
+        extra = self.root / 'skills/bloom/SKILL.md'
         extra.parent.mkdir()
-        extra.write_text('Unexpected compatibility Skill\n')
+        extra.write_bytes((self.root / 'compatibility/bloom.md').read_bytes())
         self.run_script('validate-portable-plugin.sh', succeeds=False)
         shutil.rmtree(extra.parent)
-        skill.unlink()
-        skill.symlink_to(self.root / 'skills/rainbrand/SKILL.md')
+        manifest = self.root / 'plugin.json'
+        target = Path(self.temp.name) / 'outside-plugin.json'
+        target.write_bytes(manifest.read_bytes())
+        manifest.unlink()
+        manifest.symlink_to(target)
         self.run_script('validate-portable-plugin.sh', succeeds=False)
 
-    def test_portable_changes_do_not_modify_native_packages(self):
+    def test_root_manifest_repair_preserves_native_archives(self):
         archives = {path.name: path.read_bytes() for path in (self.root / 'dist').iterdir()}
-        readme = self.root / 'portable/README.md'
-        readme.write_text(readme.read_text() + '\nPortable installation note.\n')
+        manifest = self.root / 'plugin.json'
+        original = manifest.read_bytes()
+        manifest.write_text('{}\n')
         self.run_script('package-release.sh')
+        self.assertEqual(manifest.read_bytes(), original)
         self.assertEqual(archives, {
             path.name: path.read_bytes() for path in (self.root / 'dist').iterdir()
+        })
+
+    def test_cursor_repo_and_archive_resolve_native_mcp_separately(self):
+        self.assertEqual(self.manifests['cursor']['mcpServers'], './.mcp.json')
+        with zipfile.ZipFile(self.archive_path('cursor')) as archive:
+            manifest = json.loads(archive.read('.cursor-plugin/plugin.json'))
+            self.assertEqual(manifest['mcpServers'], './mcp.json')
+            native = json.loads(archive.read('mcp.json'))
+        portable = json.loads((self.root / 'mcp.json').read_text())
+        self.assertEqual(native['mcpServers']['rainbrand'], {
+            'type': 'http', 'url': self.plugin_config['mcp']['endpoint'],
+        })
+        self.assertEqual(portable['mcpServers']['rainbrand'], {
+            'type': 'streamable-http', 'url': self.plugin_config['mcp']['endpoint'],
         })
 
     def test_marketplace_uses_the_submitted_claude_directory(self):
@@ -407,6 +424,8 @@ class PackageValidationTests(unittest.TestCase):
                     self.assertEqual(member.date_time, (1980, 1, 1, 0, 0, 0))
                     self.assertEqual(stat.S_IMODE(member.external_attr >> 16), 0o644)
                     source = member.filename
+                    if source == spec['manifest']:
+                        source = spec.get('manifest_source', source)
                     if source == spec['mcp']:
                         source = spec['mcp_source']
                     self.assertEqual(archive.read(member), (self.root / source).read_bytes())

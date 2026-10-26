@@ -16,11 +16,11 @@ OUTPUT_PATHS = {
     'codex': ROOT / '.codex-plugin/plugin.json',
     'claude': ROOT / '.claude-plugin/plugin.json',
     'cursor': ROOT / '.cursor-plugin/plugin.json',
+    'cursor-archive': ROOT / '.cursor-plugin/archive-plugin.json',
     'codex-mcp': ROOT / '.codex-plugin/.mcp.json',
     'claude-mcp': ROOT / '.mcp.json',
-    'cursor-mcp': ROOT / 'mcp.json',
-    'portable': ROOT / 'portable/plugin.json',
-    'portable-mcp': ROOT / 'portable/mcp.json',
+    'portable': ROOT / 'plugin.json',
+    'portable-mcp': ROOT / 'mcp.json',
     'claude-marketplace': ROOT / '.claude-plugin/marketplace.json',
 }
 
@@ -158,8 +158,11 @@ def build_outputs():
         'category': cursor['category'],
         'tags': cursor['tags'],
         'skills': './skills/',
-        'mcpServers': './mcp.json',
+        'mcpServers': './.mcp.json',
     }
+    # Keep existing Cursor ZIPs identical while repository installs use the
+    # native config separately from the portable root mcp.json.
+    cursor_archive_manifest = {**cursor_manifest, 'mcpServers': './mcp.json'}
 
     codex_mcp = {
         'mcpServers': {
@@ -210,9 +213,9 @@ def build_outputs():
         'codex': codex_manifest,
         'claude': claude_manifest,
         'cursor': cursor_manifest,
+        'cursor-archive': cursor_archive_manifest,
         'codex-mcp': codex_mcp,
         'claude-mcp': native_mcp,
-        'cursor-mcp': native_mcp,
         'portable': portable_manifest,
         'portable-mcp': portable_mcp,
         'claude-marketplace': claude_marketplace,
