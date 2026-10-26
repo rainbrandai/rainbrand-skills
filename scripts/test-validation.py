@@ -354,6 +354,26 @@ class PackageValidationTests(unittest.TestCase):
             path.name: path.read_bytes() for path in (self.root / 'dist').iterdir()
         })
 
+    def test_marketplace_uses_the_submitted_claude_directory(self):
+        marketplace = json.loads((self.root / '.claude-plugin/marketplace.json').read_text())
+        self.assertEqual(marketplace['owner'], self.manifests['claude']['author'])
+        self.assertEqual(marketplace['description'], self.manifests['claude']['description'])
+        self.assertEqual(marketplace['plugins'], [{'name': 'rainbrand', 'source': './claude'}])
+        source = self.root / marketplace['plugins'][0]['source']
+        self.assertEqual(source.resolve(), self.root / CLAUDE_DIRECTORY)
+        self.assertTrue((source / '.claude-plugin/plugin.json').is_file())
+        self.assertFalse((source / '.claude-plugin/marketplace.json').exists())
+        for spec in PLUGIN_SPECS.values():
+            with zipfile.ZipFile(self.root / 'dist' / spec['archive']) as archive:
+                self.assertNotIn('.claude-plugin/marketplace.json', archive.namelist())
+
+        marketplace['plugins'][0]['source'] = './'
+        self.write_json('.claude-plugin/marketplace.json', marketplace)
+        self.run_renderer('--check', succeeds=False)
+        self.run_script('validate-release.sh', succeeds=False)
+        self.run_renderer('--write')
+        self.run_script('validate-release.sh')
+
     def test_source_symlinks_extra_files_and_extra_skills(self):
         license_path = self.root / 'LICENSE'
         contents = license_path.read_bytes()

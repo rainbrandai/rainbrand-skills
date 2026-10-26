@@ -1,0 +1,14 @@
+{
+  "name": "rainbrand",
+  "owner": {
+    "name": "Rainbrand",
+    "url": "https://www.rainbrand.com/"
+  },
+  "description": "Rainbrand is the brand layer for agents. It maintains shared brand context that Claude can retrieve, apply, and update as the brand evolves.",
+  "plugins": [
+    {
+      "name": "rainbrand",
+      "source": "./claude"
+    }
+  ]
+}

@@ -213,7 +213,7 @@ validate_plugin_sources() {
   validate_source_file scripts/render-plugin-manifests.py
   validate_source_directory assets rainbrand-logo.png rainbrand-social-preview.png
   validate_source_directory .codex-plugin plugin.json .mcp.json
-  validate_source_directory .claude-plugin plugin.json
+  validate_source_directory .claude-plugin plugin.json marketplace.json
   validate_source_directory .cursor-plugin plugin.json
   validate_source_file .codex-plugin/plugin.json
   validate_source_file .codex-plugin/.mcp.json

@@ -21,6 +21,7 @@ OUTPUT_PATHS = {
     'cursor-mcp': ROOT / 'mcp.json',
     'portable': ROOT / 'portable/plugin.json',
     'portable-mcp': ROOT / 'portable/mcp.json',
+    'claude-marketplace': ROOT / '.claude-plugin/marketplace.json',
 }
 
 
@@ -198,6 +199,12 @@ def build_outputs():
             },
         },
     }
+    claude_marketplace = {
+        'name': skill['name'],
+        'owner': author,
+        'description': claude['description'],
+        'plugins': [{'name': skill['name'], 'source': './claude'}],
+    }
 
     return {
         'codex': codex_manifest,
@@ -208,6 +215,7 @@ def build_outputs():
         'cursor-mcp': native_mcp,
         'portable': portable_manifest,
         'portable-mcp': portable_mcp,
+        'claude-marketplace': claude_marketplace,
     }
 
 

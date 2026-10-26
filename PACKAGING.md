@@ -98,3 +98,27 @@ its own `skills/`; this directory contains only Rainbrand, preserving the
 standalone Bloom compatibility Skill outside this package. The three native
 archives and Anthropic's submitted `claude/` directory keep their existing
 contents. No portable ZIP is added to the five existing release assets.
+
+## Claude Code marketplace
+
+The renderer also generates `.claude-plugin/marketplace.json`. Its Rainbrand
+entry points to `./claude`, the same directory used for Anthropic's submission.
+The marketplace file stays outside the submitted directory and release ZIPs.
+
+After this change is merged, install through the repository's marketplace:
+
+```bash
+claude plugin marketplace add rainbrandai/rainbrand-skills
+claude plugin install rainbrand@rainbrand
+```
+
+For local validation before merging:
+
+```bash
+claude plugin validate .
+claude plugin validate ./claude
+```
+
+The catalog provides direct installation from this repository. Anthropic's
+directory submission and approval are separate. See the
+[Claude marketplace reference](https://code.claude.com/docs/en/plugins/marketplace-reference).
