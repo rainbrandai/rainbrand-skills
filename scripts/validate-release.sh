@@ -14,4 +14,5 @@ cmp -s "$validation_dir/expected" "$validation_dir/actual" || fail "Release must
 "$repo_root/scripts/validate-codex-plugin.sh"
 "$repo_root/scripts/validate-claude-plugin.sh"
 "$repo_root/scripts/validate-cursor-plugin.sh"
+"$repo_root/scripts/validate-portable-plugin.sh"
 echo "Validated release assets: ${release_files[*]}"

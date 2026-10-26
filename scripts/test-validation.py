@@ -311,6 +311,49 @@ class PackageValidationTests(unittest.TestCase):
         for spec in PLUGIN_SPECS.values():
             self.run_script(spec['package'], succeeds=False)
 
+    def test_portable_package_is_self_contained_and_matches_native_identity(self):
+        self.run_script('validate-portable-plugin.sh')
+        portable = self.root / 'portable'
+        manifest = json.loads((portable / 'plugin.json').read_text())
+        codex = self.manifests['codex']
+        for key in ('name', 'version', 'description', 'author', 'homepage', 'repository', 'license'):
+            self.assertEqual(manifest[key], codex[key])
+        self.assertEqual(manifest['extensions']['com.openai'], {
+            'interface': codex['interface'], **codex['extensions']['com.openai'],
+        })
+        self.assertEqual(
+            [path.name for path in (portable / 'skills').iterdir()], ['rainbrand'],
+        )
+        mcp = json.loads((portable / 'mcp.json').read_text())
+        self.assertEqual(mcp['mcpServers']['rainbrand'], {
+            'type': 'streamable-http', 'url': self.plugin_config['mcp']['endpoint'],
+        })
+        self.assertEqual(self.cursor_mcp['mcpServers']['rainbrand']['type'], 'http')
+
+    def test_portable_projection_rejects_drift_extras_and_symlinks(self):
+        skill = self.root / 'portable/skills/rainbrand/SKILL.md'
+        skill.write_text('Stale Skill copy\n')
+        self.run_script('validate-portable-plugin.sh', succeeds=False)
+        self.run_script('package-release.sh')
+        self.run_script('validate-portable-plugin.sh')
+        extra = self.root / 'portable/skills/bloom/SKILL.md'
+        extra.parent.mkdir()
+        extra.write_text('Unexpected compatibility Skill\n')
+        self.run_script('validate-portable-plugin.sh', succeeds=False)
+        shutil.rmtree(extra.parent)
+        skill.unlink()
+        skill.symlink_to(self.root / 'skills/rainbrand/SKILL.md')
+        self.run_script('validate-portable-plugin.sh', succeeds=False)
+
+    def test_portable_changes_do_not_modify_native_packages(self):
+        archives = {path.name: path.read_bytes() for path in (self.root / 'dist').iterdir()}
+        readme = self.root / 'portable/README.md'
+        readme.write_text(readme.read_text() + '\nPortable installation note.\n')
+        self.run_script('package-release.sh')
+        self.assertEqual(archives, {
+            path.name: path.read_bytes() for path in (self.root / 'dist').iterdir()
+        })
+
     def test_source_symlinks_extra_files_and_extra_skills(self):
         license_path = self.root / 'LICENSE'
         contents = license_path.read_bytes()

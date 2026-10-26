@@ -1,0 +1,101 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "rainbrand",
+  "version": "1.1.13",
+  "description": "Use Rainbrand to onboard and edit brands, get brand context for a task, and generate images, videos, and audio.",
+  "author": {
+    "name": "Rainbrand",
+    "url": "https://www.rainbrand.com/"
+  },
+  "homepage": "https://www.rainbrand.com/",
+  "repository": "https://github.com/rainbrandai/rainbrand-skills",
+  "license": "MIT",
+  "keywords": [
+    "rainbrand",
+    "brand",
+    "branding",
+    "creative"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Rainbrand",
+        "shortDescription": "The brand layer for agents.",
+        "longDescription": "Rainbrand is the brand layer for agents. It maintains a brand's identity, guidance, and assets as shared context that agents and products can use and update as the brand evolves.\n\nConnect your Rainbrand account to onboard or edit brands and get the context relevant to your work.",
+        "developerName": "Rainbrand",
+        "category": "Creativity",
+        "capabilities": [
+          "Shared brand context",
+          "Brand onboarding and updates"
+        ],
+        "websiteURL": "https://www.rainbrand.com/",
+        "supportURL": "https://www.rainbrand.com/faq/",
+        "privacyPolicyURL": "https://www.rainbrand.com/privacy/",
+        "termsOfServiceURL": "https://www.rainbrand.com/terms/",
+        "defaultPrompt": [
+          "Show me the brands I can access.",
+          "Onboard my brand from its website.",
+          "Get the current context for my brand."
+        ],
+        "logo": "./assets/rainbrand-logo.png",
+        "composerIcon": "./assets/rainbrand-logo.png"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "List the brands accessible to the connected Rainbrand account.",
+              "prompt": "Show me the brands I can access in Rainbrand.",
+              "tools_triggered": "list_brands",
+              "expected_behavior": "Returns accessible brands with their names, statuses, workspaces, and Brand session IDs."
+            },
+            {
+              "description": "Retrieve the current brand context for an existing Stripe brand, using its Brand session ID from the preceding brand-list case.",
+              "prompt": "Get the current brand context for my Stripe brand in Rainbrand.",
+              "tools_triggered": "get_brand",
+              "expected_behavior": "Uses the known Stripe Brand session ID to return the accessible brand's current status, profile, root guidance, navigation, files, and version metadata."
+            },
+            {
+              "description": "Confirm which Rainbrand account is connected.",
+              "prompt": "Which Rainbrand account am I connected to?",
+              "tools_triggered": "get_account",
+              "expected_behavior": "Calls get_account and returns the connected account's name and email."
+            },
+            {
+              "description": "List the workspaces accessible to the connected Rainbrand account.",
+              "prompt": "Which Rainbrand workspaces can I access?",
+              "tools_triggered": "list_workspaces",
+              "expected_behavior": "Returns the personal workspace first, followed by other accessible workspaces, with their IDs and names."
+            },
+            {
+              "description": "Check the remaining credits in the account's personal workspace, using its workspace ID from the preceding workspace-list case.",
+              "prompt": "How many Rainbrand credits are left in my personal workspace?",
+              "tools_triggered": "check_credits",
+              "expected_behavior": "Calls only check_credits with the known personal workspace ID and returns the workspace name, credit balance, and unlimited or paused status as applicable."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Answer a currency exchange question without running any Rainbrand tools.",
+              "prompt": "What is the current USD/EUR exchange rate?"
+            },
+            {
+              "description": "Answer a weather question without running any Rainbrand tools.",
+              "prompt": "What is the weather in Tokyo today?"
+            },
+            {
+              "description": "Answer a basic arithmetic question without running any Rainbrand tools.",
+              "prompt": "What is 17 + 25?"
+            }
+          ]
+        },
+        "demo_recording_url": "https://github.com/rainbrandai/rainbrand-skills/releases/download/v1.1.11/rainbrand-review-walkthrough-v1.1.11.mp4",
+        "commerce": false,
+        "commerce_description": "Rainbrand does not sell products or process payments through this plugin."
+      },
+      "publication": {
+        "release_notes": "Refines the plugin listing around shared brand context, brand onboarding, and updates."
+      }
+    }
+  }
+}

@@ -19,6 +19,8 @@ OUTPUT_PATHS = {
     'codex-mcp': ROOT / '.codex-plugin/.mcp.json',
     'claude-mcp': ROOT / '.mcp.json',
     'cursor-mcp': ROOT / 'mcp.json',
+    'portable': ROOT / 'portable/plugin.json',
+    'portable-mcp': ROOT / 'portable/mcp.json',
 }
 
 
@@ -174,6 +176,29 @@ def build_outputs():
         },
     }
 
+    portable_manifest = {
+        '$schema': 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json',
+        **identity,
+        'author': author,
+        **repository_fields,
+        'keywords': codex['keywords'],
+        'extensions': {
+            'com.openai': {
+                'interface': codex_manifest['interface'],
+                **codex_manifest['extensions']['com.openai'],
+            },
+        },
+    }
+    portable_mcp = {
+        '$schema': 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json',
+        'mcpServers': {
+            mcp['name']: {
+                'type': 'streamable-http',
+                'url': mcp['endpoint'],
+            },
+        },
+    }
+
     return {
         'codex': codex_manifest,
         'claude': claude_manifest,
@@ -181,6 +206,8 @@ def build_outputs():
         'codex-mcp': codex_mcp,
         'claude-mcp': native_mcp,
         'cursor-mcp': native_mcp,
+        'portable': portable_manifest,
+        'portable-mcp': portable_mcp,
     }
 
 

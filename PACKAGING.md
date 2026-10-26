@@ -76,3 +76,25 @@ Provider references:
 - [OpenAI plugin packaging](https://developers.openai.com/plugins/build/plugins)
 - [Claude plugins](https://claude.com/docs/plugins/build)
 - [Cursor plugins](https://cursor.com/docs/reference/plugins)
+
+## Portable Agent Plugins package
+
+Use `portable/` as the plugin root for clients and registries that accept
+[Agent Plugins 1.0](https://agent-plugins.org/specification). Where a registry
+supports a repository-relative source path, set it to `portable` and pin the
+reviewed commit. Check each registry's intake requirements before submitting;
+this package does not imply a public listing.
+
+The existing renderer generates `portable/plugin.json` and `portable/mcp.json`
+from the same identity, listing metadata, and endpoint as the native packages.
+`scripts/package-release.sh` also copies the canonical Rainbrand Skill, licence
+and icon into this directory. Run `scripts/validate-portable-plugin.sh` to
+check the complete directory, including exact Skill and asset bytes.
+
+Keep the portable package in its own directory. Its MCP configuration requires
+`type: "streamable-http"`, while the root `mcp.json` is Cursor's native
+`type: "http"` configuration. Portable discovery also loads every Skill under
+its own `skills/`; this directory contains only Rainbrand, preserving the
+standalone Bloom compatibility Skill outside this package. The three native
+archives and Anthropic's submitted `claude/` directory keep their existing
+contents. No portable ZIP is added to the five existing release assets.

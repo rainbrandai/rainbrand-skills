@@ -3,6 +3,7 @@
 # Shared Rainbrand source, archive, and deterministic packaging checks.
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 claude_directory_root="$repo_root/claude"
+portable_directory_root="$repo_root/portable"
 export LC_ALL=C
 export TZ=UTC
 
@@ -34,6 +35,13 @@ cursor_plugin_files=(
 )
 skill_files=(rainbrand/SKILL.md)
 bloom_skill_files=(bloom/SKILL.md)
+portable_content_files=(skills/rainbrand/SKILL.md LICENSE assets/rainbrand-logo.png)
+portable_directory_files=(
+  portable/plugin.json::plugin.json
+  portable/mcp.json::mcp.json
+  portable/README.md::README.md
+  "${portable_content_files[@]}"
+)
 release_files=(
   rainbrand.skill.zip
   bloom.skill.zip
@@ -296,6 +304,10 @@ render_claude_directory() {
   render_file_tree "$repo_root" "$claude_directory_root" "${claude_directory_files[@]}"
 }
 
+render_portable_directory() {
+  render_file_tree "$repo_root" "$portable_directory_root" "${portable_content_files[@]}"
+}
+
 validate_file_tree_contents() {
   local target_root="$1" source_root="$2" validation_dir="$3"
   local mapping source_file target_file file
@@ -336,6 +348,12 @@ validate_claude_directory() {
   local validation_dir="$1"
   validate_file_tree_contents "$claude_directory_root" "$repo_root" "$validation_dir" \
     "${claude_directory_files[@]}"
+}
+
+validate_portable_directory() {
+  local validation_dir="$1"
+  validate_file_tree_contents "$portable_directory_root" "$repo_root" "$validation_dir" \
+    "${portable_directory_files[@]}"
 }
 
 validate_zip_contents() {
