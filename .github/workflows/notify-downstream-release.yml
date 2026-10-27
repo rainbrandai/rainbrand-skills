@@ -1,0 +1,119 @@
+name: Notify downstream release consumer
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published stable release tag to replay
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: downstream-release-${{ github.event.release.tag_name || inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: Send immutable release notification
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Require downstream configuration
+        env:
+          TARGET_REPOSITORY: ${{ secrets.RAINBRAND_SKILL_SYNC_TARGET }}
+          DISPATCH_TOKEN: ${{ secrets.RAINBRAND_SKILL_DISPATCH_TOKEN }}
+        shell: bash
+        run: |
+          if [[ ! "$TARGET_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+            echo "The downstream repository target is not configured" >&2
+            exit 1
+          fi
+          if [[ -z "$DISPATCH_TOKEN" ]]; then
+            echo "The downstream dispatch credential is not configured" >&2
+            exit 1
+          fi
+
+      - name: Checkout released tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.release_tag }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve immutable release details
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+        shell: bash
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Only stable semantic-version releases are synchronized" >&2
+            exit 1
+          fi
+
+          release_json="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}")"
+          if [[ "$(jq -r '.draft' <<< "$release_json")" != "false" ]] ||
+             [[ "$(jq -r '.prerelease' <<< "$release_json")" != "false" ]] ||
+             [[ "$(jq -r '.published_at' <<< "$release_json")" == "null" ]]; then
+            echo "The tag is not a published stable GitHub release" >&2
+            exit 1
+          fi
+
+          release_url="$(jq -r '.html_url' <<< "$release_json")"
+          expected_url="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}"
+          if [[ "$release_url" != "$expected_url" ]]; then
+            echo "The release URL does not match this repository and tag" >&2
+            exit 1
+          fi
+
+          checkout_sha="$(git rev-parse HEAD)"
+          release_sha="$(git rev-list -n 1 "$RELEASE_TAG")"
+          if [[ ! "$release_sha" =~ ^[0-9a-f]{40}$ ]] ||
+             [[ "$checkout_sha" != "$release_sha" ]]; then
+            echo "The checked-out tag did not resolve to one immutable commit" >&2
+            exit 1
+          fi
+
+          echo "tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "commit_sha=${release_sha}" >> "$GITHUB_OUTPUT"
+          echo "release_url=${release_url}" >> "$GITHUB_OUTPUT"
+
+      - name: Notify downstream consumer
+        env:
+          GH_TOKEN: ${{ secrets.RAINBRAND_SKILL_DISPATCH_TOKEN }}
+          TARGET_REPOSITORY: ${{ secrets.RAINBRAND_SKILL_SYNC_TARGET }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_SHA: ${{ steps.release.outputs.commit_sha }}
+          RELEASE_URL: ${{ steps.release.outputs.release_url }}
+        shell: bash
+        run: |
+          payload="$(jq -n \
+            --arg tag "$RELEASE_TAG" \
+            --arg commit_sha "$RELEASE_SHA" \
+            --arg release_url "$RELEASE_URL" \
+            '{
+              event_type: "rainbrand_skill_released",
+              client_payload: {
+                tag: $tag,
+                commit_sha: $commit_sha,
+                release_url: $release_url
+              }
+            }')"
+
+          if ! gh api \
+            --method POST \
+            "repos/${TARGET_REPOSITORY}/dispatches" \
+            --input - <<< "$payload" \
+            >/dev/null 2>&1; then
+            echo "The downstream release notification failed" >&2
+            exit 1
+          fi
+
+          echo "The immutable release notification was accepted." >> "$GITHUB_STEP_SUMMARY"
