@@ -30,9 +30,10 @@ Generated MCP files keep portable and native connection formats separate:
 | `.codex-plugin/.mcp.json` | Codex and ChatGPT package source | Codex compatibility shape; packaged as root `.mcp.json` |
 | `.mcp.json` | Claude and Cursor repository installs | Native shape; the remote server entry contains `type: "http"` and `url` |
 | `mcp.json` | Portable Agent Plugins clients | Portable schema with `type: "streamable-http"` and `url` |
+| `gemini-extension.json` | Gemini CLI repository installs | Native extension with `httpUrl` and OAuth discovery |
 
-The Codex archive maps `.codex-plugin/.mcp.json` to root `.mcp.json`. All three
-generated files get their server name and endpoint from `plugin-config.json`;
+The Codex archive maps `.codex-plugin/.mcp.json` to root `.mcp.json`. All
+generated connection files get their server name and endpoint from `plugin-config.json`;
 none is an independent source of truth.
 
 Cursor's repository manifest explicitly reads `./.mcp.json`. Its generated
@@ -98,6 +99,28 @@ Only the Rainbrand Skill lives under `skills/`, so portable discovery does not
 offer the legacy Bloom Skill. The native archives and Anthropic's submitted
 `claude/` directory retain their existing contents. No portable ZIP is added
 to the five release assets.
+
+## Gemini CLI extension
+
+The renderer generates root `gemini-extension.json` using the Skill's name and
+version, the existing short listing description in `plugin-copy.json`, and the
+MCP endpoint in `plugin-config.json`. Gemini CLI discovers the existing
+`skills/rainbrand/SKILL.md` through the extension's `skills/` directory. There
+is no separate Skill copy or Gemini ZIP. Installation and OAuth steps are in
+[the Gemini CLI guide](docs/gemini-cli.md).
+
+Before enabling gallery discovery, verify installation and OAuth on a client,
+then publish a stable repository release containing this manifest. The older
+v1.1.13 release predates the manifest: the unqualified Gemini install command
+prefers GitHub's latest release, so merging a manifest into main alone does not
+make that command work. Do not replace or retag an existing release. Follow the
+normal version/render/package process for the next stable release, keeping the
+manifest version and release tag aligned. Until then, install from `--ref=main`.
+
+After a working release is public, add the `gemini-cli-extension` repository
+topic. The [gallery crawler](https://geminicli.com/docs/extensions/releasing/)
+uses that topic and the root manifest; publication is only complete once a
+public gallery entry and its install command have been verified.
 
 ## Legacy Bloom download
 

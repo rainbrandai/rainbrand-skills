@@ -22,6 +22,7 @@ OUTPUT_PATHS = {
     'portable': ROOT / 'plugin.json',
     'portable-mcp': ROOT / 'mcp.json',
     'claude-marketplace': ROOT / '.claude-plugin/marketplace.json',
+    'gemini': ROOT / 'gemini-extension.json',
 }
 
 
@@ -208,6 +209,17 @@ def build_outputs():
         'description': claude['description'],
         'plugins': [{'name': skill['name'], 'source': './claude'}],
     }
+    gemini_manifest = {
+        'name': skill['name'],
+        'version': skill['version'],
+        'description': interface_copy['shortDescription'],
+        'mcpServers': {
+            mcp['name']: {
+                'httpUrl': mcp['endpoint'],
+                'oauth': {'enabled': True},
+            },
+        },
+    }
 
     return {
         'codex': codex_manifest,
@@ -219,6 +231,7 @@ def build_outputs():
         'portable': portable_manifest,
         'portable-mcp': portable_mcp,
         'claude-marketplace': claude_marketplace,
+        'gemini': gemini_manifest,
     }
 
 
