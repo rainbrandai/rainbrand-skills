@@ -5,6 +5,19 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ## [Unreleased]
 
+## [1.1.14] - 2026-11-17
+
+### Added
+
+- Add a Gemini CLI extension that installs the existing Rainbrand Skill and hosted MCP connection together, with browser sign-in and an installation guide.
+- Restore the portable Agent Plugins manifest and add a Claude Code marketplace that uses the existing Claude submission folder.
+- Notify the downstream repository when a stable release is published so it can open a separate review pull request for its Skill copies.
+
+### Changed
+
+- Separate portable and native MCP connection files while retaining the existing five release downloads and the independent `bloom.skill.zip` compatibility download.
+- Update package versions and rebuild the Rainbrand archives. The Skill's operating guidance is unchanged.
+
 ## [1.1.13] - 2026-10-17
 
 ### Changed
