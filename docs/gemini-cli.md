@@ -3,10 +3,10 @@
 Rainbrand is the brand layer for agents. This extension includes the Rainbrand
 Skill and a connection to Rainbrand's hosted MCP server.
 
-Install from the repository's main branch:
+Install the extension:
 
 ```bash
-gemini extensions install https://github.com/rainbrandai/rainbrand-skills --ref=main
+gemini extensions install https://github.com/rainbrandai/rainbrand-skills
 ```
 
 Review the extension permissions, then restart Gemini CLI. In its interactive

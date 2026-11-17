@@ -1,6 +1,6 @@
 {
   "name": "rainbrand",
-  "version": "1.1.13",
+  "version": "1.1.14",
   "description": "The brand layer for agents.",
   "mcpServers": {
     "rainbrand": {
