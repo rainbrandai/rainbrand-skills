@@ -51,6 +51,7 @@ EXPECTED_RELEASE_ASSETS = {
     *(spec['archive'] for spec in PLUGIN_SPECS.values()),
 }
 CLAUDE_DIRECTORY = 'claude'
+CLAUDE_CODE_DIRECTORY = 'claude-code'
 CLAUDE_DIRECTORY_MEMBERS = [
     '.claude-plugin/plugin.json', '.mcp.json',
     *(member for member in SHARED_MEMBERS if member != 'CHANGELOG.md'),
@@ -371,25 +372,29 @@ class PackageValidationTests(unittest.TestCase):
             'type': 'streamable-http', 'url': self.plugin_config['mcp']['endpoint'],
         })
 
-    def test_marketplace_uses_the_submitted_claude_directory(self):
+    def test_marketplace_uses_the_claude_code_directory(self):
         marketplace = json.loads((self.root / '.claude-plugin/marketplace.json').read_text())
         self.assertEqual(marketplace['owner'], self.manifests['claude']['author'])
         self.assertEqual(marketplace['description'], self.manifests['claude']['description'])
-        self.assertEqual(marketplace['plugins'], [{'name': 'rainbrand', 'source': './claude'}])
+        self.assertEqual(marketplace['plugins'], [{'name': 'rainbrand', 'source': './claude-code'}])
         source = self.root / marketplace['plugins'][0]['source']
-        self.assertEqual(source.resolve(), self.root / CLAUDE_DIRECTORY)
+        self.assertEqual(source.resolve(), self.root / CLAUDE_CODE_DIRECTORY)
         self.assertTrue((source / '.claude-plugin/plugin.json').is_file())
         self.assertFalse((source / '.claude-plugin/marketplace.json').exists())
         for spec in PLUGIN_SPECS.values():
             with zipfile.ZipFile(self.root / 'dist' / spec['archive']) as archive:
                 self.assertNotIn('.claude-plugin/marketplace.json', archive.namelist())
 
-        marketplace['plugins'][0]['source'] = './'
-        self.write_json('.claude-plugin/marketplace.json', marketplace)
-        self.run_renderer('--check', succeeds=False)
-        self.run_script('validate-release.sh', succeeds=False)
-        self.run_renderer('--write')
-        self.run_script('validate-release.sh')
+        # Neither the repository root nor Anthropic's directory folder may
+        # stand in for the marketplace folder.
+        for other_source in ('./', './claude'):
+            with self.subTest(source=other_source):
+                marketplace['plugins'][0]['source'] = other_source
+                self.write_json('.claude-plugin/marketplace.json', marketplace)
+                self.run_renderer('--check', succeeds=False)
+                self.run_script('validate-release.sh', succeeds=False)
+                self.run_renderer('--write')
+                self.run_script('validate-release.sh')
 
     def test_source_symlinks_extra_files_and_extra_skills(self):
         license_path = self.root / 'LICENSE'
@@ -439,30 +444,37 @@ class PackageValidationTests(unittest.TestCase):
             self.assertEqual(archive.namelist(), ['bloom/SKILL.md'])
             self.assertEqual(archive.read('bloom/SKILL.md'), bloom_skill)
 
-    def test_claude_directory_matches_package_sources(self):
-        directory = self.root / CLAUDE_DIRECTORY
-        actual = sorted(
+    def directory_members(self, name):
+        directory = self.root / name
+        return sorted(
             str(path.relative_to(directory))
             for path in directory.rglob('*')
             if path.is_file()
         )
-        self.assertEqual(actual, sorted(CLAUDE_DIRECTORY_MEMBERS))
-        for target in CLAUDE_DIRECTORY_MEMBERS:
-            self.assertEqual(
-                (directory / target).read_bytes(),
-                (self.root / target).read_bytes(),
-            )
+
+    def test_claude_directories_match_package_sources(self):
+        for name in (CLAUDE_CODE_DIRECTORY, CLAUDE_DIRECTORY):
+            with self.subTest(directory=name):
+                self.assertEqual(self.directory_members(name), sorted(CLAUDE_DIRECTORY_MEMBERS))
+                for target in CLAUDE_DIRECTORY_MEMBERS:
+                    self.assertEqual(
+                        (self.root / name / target).read_bytes(),
+                        (self.root / target).read_bytes(),
+                    )
 
     def test_claude_directory_drift_is_rejected_and_repaired(self):
-        readme = self.root / CLAUDE_DIRECTORY / 'README.md'
-        readme.write_text('Stale projection.\n')
-        self.run_script('validate-claude-plugin.sh', succeeds=False)
-        self.run_script('package-claude-plugin.sh')
-        self.assertEqual(readme.read_bytes(), (self.root / 'README.md').read_bytes())
+        for name in (CLAUDE_CODE_DIRECTORY, CLAUDE_DIRECTORY):
+            with self.subTest(directory=name):
+                readme = self.root / name / 'README.md'
+                readme.write_text('Stale projection.\n')
+                self.run_script('validate-claude-plugin.sh', succeeds=False)
+                self.run_script('package-claude-plugin.sh')
+                self.assertEqual(readme.read_bytes(), (self.root / 'README.md').read_bytes())
 
-        extra = self.root / CLAUDE_DIRECTORY / 'extra.txt'
-        extra.write_text('Unexpected file.\n')
-        self.run_script('validate-claude-plugin.sh', succeeds=False)
+                extra = self.root / name / 'extra.txt'
+                extra.write_text('Unexpected file.\n')
+                self.run_script('validate-claude-plugin.sh', succeeds=False)
+                extra.unlink()
 
     def test_corrupt_or_unexpected_members_fail_each_provider(self):
         for provider, spec in PLUGIN_SPECS.items():

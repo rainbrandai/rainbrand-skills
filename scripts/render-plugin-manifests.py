@@ -207,7 +207,7 @@ def build_outputs():
         'name': skill['name'],
         'owner': author,
         'description': claude['description'],
-        'plugins': [{'name': skill['name'], 'source': './claude'}],
+        'plugins': [{'name': skill['name'], 'source': './claude-code'}],
     }
     gemini_manifest = {
         'name': skill['name'],

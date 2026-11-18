@@ -3,6 +3,7 @@
 # Shared Rainbrand source, archive, and deterministic packaging checks.
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 claude_directory_root="$repo_root/claude"
+claude_code_root="$repo_root/claude-code"
 export LC_ALL=C
 export TZ=UTC
 
@@ -23,10 +24,13 @@ claude_plugin_files=(
   .mcp.json
   "${shared_plugin_files[@]}"
 )
-claude_directory_files=()
+# The Claude Code marketplace folder and Anthropic's directory folder each hold
+# the Claude archive's runtime files, without the release-only changelog.
+claude_code_files=()
 for file in "${claude_plugin_files[@]}"; do
-  [[ "$file" == CHANGELOG.md ]] || claude_directory_files+=("$file")
+  [[ "$file" == CHANGELOG.md ]] || claude_code_files+=("$file")
 done
+claude_directory_files=("${claude_code_files[@]}")
 cursor_plugin_files=(
   .cursor-plugin/archive-plugin.json::.cursor-plugin/plugin.json
   .mcp.json::mcp.json
@@ -298,7 +302,8 @@ render_file_tree() {
   done
 }
 
-render_claude_directory() {
+render_claude_directories() {
+  render_file_tree "$repo_root" "$claude_code_root" "${claude_code_files[@]}"
   render_file_tree "$repo_root" "$claude_directory_root" "${claude_directory_files[@]}"
 }
 
@@ -338,9 +343,11 @@ validate_file_tree_contents() {
   done
 }
 
-validate_claude_directory() {
+validate_claude_directories() {
   local validation_dir="$1"
-  validate_file_tree_contents "$claude_directory_root" "$repo_root" "$validation_dir" \
+  validate_file_tree_contents "$claude_code_root" "$repo_root" "$validation_dir/claude-code" \
+    "${claude_code_files[@]}"
+  validate_file_tree_contents "$claude_directory_root" "$repo_root" "$validation_dir/claude" \
     "${claude_directory_files[@]}"
 }
 

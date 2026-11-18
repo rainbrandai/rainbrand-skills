@@ -43,12 +43,13 @@ paths. This preserves the submitted Cursor ZIP byte-for-byte without asking a
 native loader to interpret the portable configuration.
 
 The committed `claude/` directory is the source folder submitted to Anthropic's
-plugin directory. It contains the runtime and listing files from the Claude
-archive, including the native MCP configuration at `claude/.mcp.json`, but
-omits the release-only changelog. The Claude package builder refreshes this
-projection, and validation rejects drift or extra files. In Anthropic's
-developer portal, submit this repository with the plugin path `claude` so its
-scanner only reads the Claude bundle.
+plugin directory, and `claude-code/` is the plugin that the
+[Claude Code marketplace](#claude-code-marketplace) installs. Each contains the
+runtime and listing files from the Claude archive, including the native MCP
+configuration at `.mcp.json`, but omits the release-only changelog. The Claude
+package builder refreshes both projections, and validation rejects drift or
+extra files. In Anthropic's developer portal, submit this repository with the
+plugin path `claude` so its scanner only reads the Claude bundle.
 
 ## Build and validate
 
@@ -197,8 +198,10 @@ plugin catalogs. Previously indexed third-party listings need separate cleanup.
 ## Claude Code marketplace
 
 The renderer also generates `.claude-plugin/marketplace.json`. Its Rainbrand
-entry points to `./claude`, the same directory used for Anthropic's submission.
-The marketplace file stays outside the submitted directory and release ZIPs.
+entry points to `./claude-code`, kept separate from Anthropic's submitted
+`claude/` directory so changes made for the directory listing don't reach
+marketplace installs. The marketplace file stays outside both directories and
+the release ZIPs.
 
 After this change is merged, install through the repository's marketplace:
 
@@ -211,6 +214,7 @@ For local validation before merging:
 
 ```bash
 claude plugin validate .
+claude plugin validate ./claude-code
 claude plugin validate ./claude
 ```
 
