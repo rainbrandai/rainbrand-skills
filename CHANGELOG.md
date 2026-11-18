@@ -5,6 +5,14 @@ Notable changes to the Rainbrand Skill and Agent Plugin. This project follows
 
 ## [Unreleased]
 
+## [1.1.15] - 2026-11-18
+
+### Changed
+
+- Connect the folder submitted to Anthropic's directory to Rainbrand's brand-only MCP endpoint, and leave media generation out of its Skill description, as the directory requires. The Claude download and every other package keep the main endpoint and Skill.
+- Install the Claude Code marketplace plugin from a new `claude-code/` folder, so marketplace installs keep every Rainbrand tool.
+- Update package versions and rebuild the Rainbrand archives. The Skill's operating guidance is unchanged.
+
 ## [1.1.14] - 2026-11-17
 
 ### Added

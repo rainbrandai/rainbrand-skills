@@ -4,7 +4,7 @@ description: Use Rainbrand to onboard and edit brands and get brand context for 
 license: MIT
 metadata:
   author: Rainbrand
-  version: "1.1.14"
+  version: "1.1.15"
   url: https://docs.rainbrand.com/mcp/getting-started
 ---
 
