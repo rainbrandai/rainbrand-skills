@@ -2,7 +2,7 @@
 
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/plugin-common.sh"
-require_commands cmp sort mktemp
+require_commands cmp sort mktemp python3 pnpm
 validation_dir="$(mktemp -d "${TMPDIR:-/tmp}/rainbrand-release-validate.XXXXXX")"
 trap 'rm -rf "$validation_dir"' EXIT
 printf '%s\n' "${release_files[@]}" | sort > "$validation_dir/expected"
@@ -15,4 +15,5 @@ cmp -s "$validation_dir/expected" "$validation_dir/actual" || fail "Release must
 "$repo_root/scripts/validate-claude-plugin.sh"
 "$repo_root/scripts/validate-cursor-plugin.sh"
 "$repo_root/scripts/validate-portable-plugin.sh"
+python3 "$repo_root/packages/pi/pack.py" "$validation_dir/pi"
 echo "Validated release assets: ${release_files[*]}"

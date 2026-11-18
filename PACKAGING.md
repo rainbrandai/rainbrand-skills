@@ -62,6 +62,7 @@ Run the regression suite:
 
 ```bash
 python3 scripts/test-validation.py
+python3 packages/pi/test_pack.py
 ```
 
 The expected release assets are:
@@ -78,6 +79,10 @@ Builds are deterministic. Validation checks generated-file freshness, provider
 manifest contracts, submission metadata, MCP parity, branding, exact archive
 members, regular file types, source Skill and asset byte parity, and
 reproducibility across time zones and umasks.
+
+Release validation also builds and inspects the Pi tarball in a temporary
+directory. Install Python 3.9 or later, Node.js 22.19 or later, and pnpm
+10.34.7 for the Pi checks. The package has no runtime npm dependencies.
 
 Provider references:
 
@@ -121,6 +126,64 @@ After a working release is public, add the `gemini-cli-extension` repository
 topic. The [gallery crawler](https://geminicli.com/docs/extensions/releasing/)
 uses that topic and the root manifest; publication is only complete once a
 public gallery entry and its install command have been verified.
+
+## Pi package
+
+Build the Pi distribution with pnpm through its staging wrapper.
+
+```bash
+python3 packages/pi/pack.py .context/pi-artifacts
+python3 packages/pi/test_pack.py
+```
+
+`packages/pi/package.template.json` owns the npm name
+`@rainbrand-ai/pi-plugin`, catalog keyword, and Pi resource paths. The npm
+organization is `rainbrand-ai`. GitHub sources remain under
+`rainbrandai/rainbrand-skills`.
+
+The wrapper reuses the canonical renderer's metadata parser to populate the
+version, description, author, and license directly from
+`skills/rainbrand/SKILL.md`. It renders Pi's URL-only MCP configuration from
+`plugin-config.json`. Version changes take effect on the next pack.
+
+Each invocation creates an isolated temporary package directory, copies the
+canonical Skill and license, adds the extension and package README, and runs
+`pnpm pack`. It verifies exactly six regular files and their contents before
+atomically placing the tarball in the requested output directory. Temporary
+staging is removed on success and exceptions. Concurrent builds use separate
+staging directories. The tracked package source contains a manifest template
+and the pack entry point. Use the wrapper to create the installable package.
+
+The release validator exercises that same pack path. The regression tests
+cover native registration, compatibility warnings, canonical updates, scope
+changes, exact contents, failure cleanup, concurrent packs, and deterministic
+bytes across time zones and umasks. The existing five GitHub ZIP release
+assets retain their established release process.
+
+Complete the isolated install and OAuth smoke test described in
+[the Pi verification guide](docs/pi.md). Tomas reviews the PR before npm
+publication. After Tomas's review, explicit publication approval, and merge,
+build from the reviewed release and publish the inspected tarball using pnpm
+from an authenticated `rainbrand-ai` publisher environment.
+
+```bash
+pi_tarball="$(python3 packages/pi/pack.py .context/pi-artifacts)"
+pnpm publish "$pi_tarball" --access public
+```
+
+After publication, verify the versioned npm install and the public Pi catalog
+entry, then record their URLs and verification date in
+[the distribution issue](https://github.com/rainbrandai/hero/issues/3542).
+The `pi-package` keyword makes a published package eligible for indexing.
+Public catalog visibility requires a separate check.
+
+Packaging references checked on November 18, 2026 include
+[Pi packages](https://docs.pi.dev/latest/packages),
+[Pi extensions](https://docs.pi.dev/latest/extensions#mcp-servers),
+[Pi native MCP and OAuth](https://docs.pi.dev/latest/mcp), and
+[Postman's installer staging](https://github.com/postmanlabs/postman-plugin/tree/main/installer).
+Pi's native MCP support first shipped in
+[0.99.0](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/CHANGELOG.md#0990---2026-09-29).
 
 ## Legacy Bloom download
 
