@@ -80,11 +80,11 @@ class PiPackageTests(unittest.TestCase):
         }))
         template = self.root / 'packages/pi/package.template.json'
         manifest = json.loads(template.read_text())
-        manifest['name'] = '@rainbrand/pi-plugin'
+        manifest['name'] = '@example/pi-plugin'
         template.write_text(json.dumps(manifest))
         contents = self.contents(self.builder.pack(self.output))
         packed = json.loads(contents['package/package.json'])
-        self.assertEqual(packed['name'], '@rainbrand/pi-plugin')
+        self.assertEqual(packed['name'], '@example/pi-plugin')
         self.assertEqual(packed['version'], '9.8.7')
         self.assertEqual(json.loads(contents['package/mcp.json']), {
             'mcpServers': {'renamed': {'url': 'https://example.com/mcp'}},

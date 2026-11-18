@@ -4,7 +4,7 @@ Rainbrand gives Pi access to your brand guidance and assets. The package loads
 the Rainbrand Skill and registers Rainbrand's hosted MCP server.
 
 Use Pi 0.99.0 or later with its built-in MCP extension enabled. Once the
-package is published, install it with `pi install npm:@rainbrandai/pi-plugin`.
+package is published, install it with `pi install npm:@rainbrand-ai/pi-plugin`.
 For a local tarball, extract it and pass the absolute path to its `package`
 directory to `pi install`.
 

@@ -136,11 +136,10 @@ python3 packages/pi/pack.py .context/pi-artifacts
 python3 packages/pi/test_pack.py
 ```
 
-`packages/pi/package.template.json` owns the provisional npm name
-`@rainbrandai/pi-plugin`, catalog keyword, and Pi resource paths. Confirm
-Tomas's scope access before publication. If the accessible scope differs,
-change `name` in that template and the install command in
-`packages/pi/README.md`, then rebuild and repeat validation.
+`packages/pi/package.template.json` owns the npm name
+`@rainbrand-ai/pi-plugin`, catalog keyword, and Pi resource paths. The npm
+organization is `rainbrand-ai`. GitHub sources remain under
+`rainbrandai/rainbrand-skills`.
 
 The wrapper reuses the canonical renderer's metadata parser to populate the
 version, description, author, and license directly from
@@ -163,9 +162,9 @@ assets retain their established release process.
 
 Complete the isolated install and OAuth smoke test described in
 [the Pi verification guide](docs/pi.md). Tomas reviews the PR before npm
-publication. After approval and merge, build from the reviewed release,
-authenticate the intended npm publisher and confirm access to the selected
-scope, then publish the inspected tarball using pnpm.
+publication. After Tomas's review, explicit publication approval, and merge,
+build from the reviewed release and publish the inspected tarball using pnpm
+from an authenticated `rainbrand-ai` publisher environment.
 
 ```bash
 pi_tarball="$(python3 packages/pi/pack.py .context/pi-artifacts)"

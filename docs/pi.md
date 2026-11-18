@@ -1,7 +1,7 @@
 # Verify Rainbrand in Pi
 
-The Pi package is prepared for Tomas's review. Its provisional npm name is
-`@rainbrandai/pi-plugin` and its version follows the canonical Rainbrand Skill.
+The Pi package is prepared for Tomas's review. Its npm name is
+`@rainbrand-ai/pi-plugin` and its version follows the canonical Rainbrand Skill.
 The customer instructions ship in
 [the package README](../packages/pi/README.md).
 
@@ -59,9 +59,9 @@ authorization, token storage, and refresh.
 ## Verification on November 18, 2026
 
 The isolated smoke test used Pi 1.5.2, Node.js 24.22.1, pnpm 10.34.7, and
-Rainbrand Skill version 1.1.14. The artifact installed successfully through
-pnpm and `pi install` registered its local directory. Pi's RPC `get_commands`
-response discovered `skill:rainbrand` from the installed package. The native
+Rainbrand Skill version 1.1.14. The `@rainbrand-ai/pi-plugin` artifact installed
+successfully through pnpm and `pi install` registered its local directory.
+Pi's RPC `get_commands` response discovered `skill:rainbrand` from the installed package. The native
 `/mcp` command reported `rainbrand` as needing sign-in.
 
 The hosted MCP endpoint returned HTTP 401 with protected-resource metadata
@@ -70,11 +70,20 @@ completed discovery and generated an authorization request to
 `www.rainbrand.com/api/auth/oauth2/authorize` with PKCE S256 and a loopback
 callback. Pi then requested browser sign-in. The test cancelled at that prompt.
 
-All seven package regression tests, all 31 existing regression tests, and the
-release validators pass. Reviewer sign-in credentials were absent from the
-test workspace and environment.
+After the npm scope update, all seven package regression tests, manifest
+freshness, and the release validators pass. The 31 existing regression tests
+passed on the preceding implementation. The rebuilt tarball contains six
+regular files and its SHA-256 is
+`c60e9308ea85b0cd20515ff2287e046d774eeb52c7f96370eef3631c2e16e76d`.
+Reviewer sign-in credentials were absent from the test workspace and environment.
 Successful browser approval, token exchange and refresh, authenticated tool
 loading, and the Stripe homepage-hero Brief remain unverified. To complete
 those checks, start the isolated Pi session above, run `/mcp login rainbrand`,
 approve access as the reviewer, select an authenticated model, and send the
 Brief prompt. Record the result before publication.
+
+The coordinating parent workspace verified npm access on November 18, 2026.
+`pnpm whoami` returned `tomasward`, and
+`pnpm exec npm org ls rainbrand-ai --json --registry=https://registry.npmjs.org/`
+returned `{"tomasward":"owner"}`. Scope ownership is verified. Publication
+requires Tomas's review and explicit approval.
