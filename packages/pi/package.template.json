@@ -1,0 +1,19 @@
+{
+  "name": "@rainbrandai/pi-plugin",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rainbrandai/rainbrand-skills.git",
+    "directory": "packages/pi"
+  },
+  "homepage": "https://www.rainbrand.com/",
+  "keywords": ["pi-package", "rainbrand", "mcp"],
+  "files": ["extension.js", "mcp.json", "skills/rainbrand/SKILL.md"],
+  "pi": {
+    "extensions": ["./extension.js"],
+    "skills": ["./skills/rainbrand/SKILL.md"]
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
