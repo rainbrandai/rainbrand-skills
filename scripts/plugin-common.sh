@@ -3,6 +3,7 @@
 # Shared Rainbrand source, archive, and deterministic packaging checks.
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 claude_directory_root="$repo_root/claude"
+claude_code_root="$repo_root/claude-code"
 export LC_ALL=C
 export TZ=UTC
 
@@ -23,9 +24,18 @@ claude_plugin_files=(
   .mcp.json
   "${shared_plugin_files[@]}"
 )
-claude_directory_files=()
+# The Claude Code marketplace folder and Anthropic's directory folder each hold
+# the Claude archive's runtime files, without the release-only changelog.
+claude_code_files=()
 for file in "${claude_plugin_files[@]}"; do
-  [[ "$file" == CHANGELOG.md ]] || claude_directory_files+=("$file")
+  [[ "$file" == CHANGELOG.md ]] || claude_code_files+=("$file")
+done
+# The renderer writes the directory folder's MCP config and Skill, with the
+# brand-only endpoint and description; the builder copies its other files.
+claude_directory_rendered_files=(.mcp.json skills/rainbrand/SKILL.md)
+claude_directory_files=()
+for file in "${claude_code_files[@]}"; do
+  [[ "$file" == .mcp.json || "$file" == skills/rainbrand/SKILL.md ]] || claude_directory_files+=("$file")
 done
 cursor_plugin_files=(
   .cursor-plugin/archive-plugin.json::.cursor-plugin/plugin.json
@@ -298,14 +308,14 @@ render_file_tree() {
   done
 }
 
-render_claude_directory() {
+render_claude_directories() {
+  render_file_tree "$repo_root" "$claude_code_root" "${claude_code_files[@]}"
   render_file_tree "$repo_root" "$claude_directory_root" "${claude_directory_files[@]}"
 }
 
-validate_file_tree_contents() {
-  local target_root="$1" source_root="$2" validation_dir="$3"
-  local mapping source_file target_file file
-  shift 3
+validate_file_tree_members() {
+  local target_root="$1" validation_dir="$2" mapping target_file file
+  shift 2
   [[ -d "$target_root" && ! -L "$target_root" ]] || \
     fail "Missing regular directory: $target_root"
   [[ -z "$(find "$target_root" ! -type d ! -type f -print -quit)" ]] || \
@@ -327,6 +337,11 @@ validate_file_tree_contents() {
   sort -o "$validation_dir/actual" "$validation_dir/actual"
   cmp -s "$validation_dir/expected" "$validation_dir/actual" || \
     fail "Directory must contain exactly the allowed files: $target_root"
+}
+
+validate_file_tree_sources() {
+  local target_root="$1" source_root="$2" mapping source_file target_file
+  shift 2
   for mapping in "$@"; do
     source_file="${mapping%%::*}"
     target_file="${mapping#*::}"
@@ -338,10 +353,27 @@ validate_file_tree_contents() {
   done
 }
 
-validate_claude_directory() {
+validate_file_tree_contents() {
+  local target_root="$1" source_root="$2" validation_dir="$3"
+  shift 3
+  validate_file_tree_members "$target_root" "$validation_dir" "$@"
+  validate_file_tree_sources "$target_root" "$source_root" "$@"
+}
+
+validate_claude_directories() {
   local validation_dir="$1"
-  validate_file_tree_contents "$claude_directory_root" "$repo_root" "$validation_dir" \
-    "${claude_directory_files[@]}"
+  validate_file_tree_contents "$claude_code_root" "$repo_root" "$validation_dir/claude-code" \
+    "${claude_code_files[@]}"
+  # validate_plugin_sources already ran the renderer's --check, which covers
+  # the rendered files' contents. Check their shape too, as for the root
+  # MCP config and Skill.
+  validate_file_tree_members "$claude_directory_root" "$validation_dir/claude" \
+    "${claude_directory_files[@]}" "${claude_directory_rendered_files[@]}"
+  validate_file_tree_sources "$claude_directory_root" "$repo_root" "${claude_directory_files[@]}"
+  awk -v kind=claude-mcp -v expected_name=rainbrand \
+    -f "$repo_root/scripts/validate-manifests.awk" "$claude_directory_root/.mcp.json"
+  read_skill_metadata "$claude_directory_root/skills/rainbrand/SKILL.md" rainbrand Rainbrand \
+    https://docs.rainbrand.com/mcp/getting-started > /dev/null
 }
 
 validate_zip_contents() {

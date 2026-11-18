@@ -2,7 +2,7 @@
   "mcpServers": {
     "rainbrand": {
       "type": "http",
-      "url": "https://mcp.rainbrand.com/mcp"
+      "url": "https://mcp.rainbrand.com/mcp/brand"
     }
   }
 }

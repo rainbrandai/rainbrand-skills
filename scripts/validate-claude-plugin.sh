@@ -12,7 +12,7 @@ archive="${1:-$repo_root/dist/rainbrand.claude-plugin.zip}"
 validation_dir="$(mktemp -d "${TMPDIR:-/tmp}/rainbrand-claude-validate.XXXXXX")"
 trap 'rm -rf "$validation_dir"' EXIT
 
-validate_claude_directory "$validation_dir/directory"
+validate_claude_directories "$validation_dir/directories"
 validate_zip_contents "$archive" "$repo_root" "$validation_dir" "${claude_plugin_files[@]}"
 validate_skill_archives "$repo_root/dist" "$validation_dir"
 

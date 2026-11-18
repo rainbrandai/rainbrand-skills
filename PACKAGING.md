@@ -10,8 +10,10 @@ lives in `README.md`.
 - `compatibility/bloom.md` independently owns those fields and guidance for
   the legacy Bloom download. It is outside Skill discovery; the builder maps
   its unchanged bytes to `bloom/SKILL.md` in `bloom.skill.zip`.
-- `plugin-copy.json` owns provider listing, review, and publication copy.
-- `plugin-config.json` owns the Rainbrand MCP server name and endpoint.
+- `plugin-copy.json` owns provider listing, review, and publication copy,
+  including the Skill description used only in Anthropic's directory folder.
+- `plugin-config.json` owns the Rainbrand MCP server name and endpoint, plus
+  the brand-only endpoint used only in Anthropic's directory folder.
 
 Run the renderer after changing any canonical source:
 
@@ -31,6 +33,7 @@ Generated MCP files keep portable and native connection formats separate:
 | `.mcp.json` | Claude and Cursor repository installs | Native shape; the remote server entry contains `type: "http"` and `url` |
 | `mcp.json` | Portable Agent Plugins clients | Portable schema with `type: "streamable-http"` and `url` |
 | `gemini-extension.json` | Gemini CLI repository installs | Native extension with `httpUrl` and OAuth discovery |
+| `claude/.mcp.json` | Anthropic's directory submission | Native shape with the brand-only `claudeDirectoryEndpoint` |
 
 The Codex archive maps `.codex-plugin/.mcp.json` to root `.mcp.json`. All
 generated connection files get their server name and endpoint from `plugin-config.json`;
@@ -43,12 +46,21 @@ paths. This preserves the submitted Cursor ZIP byte-for-byte without asking a
 native loader to interpret the portable configuration.
 
 The committed `claude/` directory is the source folder submitted to Anthropic's
-plugin directory. It contains the runtime and listing files from the Claude
-archive, including the native MCP configuration at `claude/.mcp.json`, but
-omits the release-only changelog. The Claude package builder refreshes this
-projection, and validation rejects drift or extra files. In Anthropic's
-developer portal, submit this repository with the plugin path `claude` so its
-scanner only reads the Claude bundle.
+plugin directory, and `claude-code/` is the plugin that the
+[Claude Code marketplace](#claude-code-marketplace) installs. Each contains the
+runtime and listing files from the Claude archive, including the native MCP
+configuration at `.mcp.json`, but omits the release-only changelog. The Claude
+package builder refreshes both projections, and validation rejects drift or
+extra files. In Anthropic's developer portal, submit this repository with the
+plugin path `claude` so its scanner only reads the Claude bundle.
+
+Anthropic's directory doesn't list AI media generation, so `claude/` connects
+to the brand-only endpoint and its Skill description leaves generation out.
+The renderer writes those two files, `claude/.mcp.json` and
+`claude/skills/rainbrand/SKILL.md`; the Skill differs from the canonical one
+only in its description. Every other package, `claude-code/` included, keeps
+the main endpoint and Skill. Don't add the brand-only endpoint to customer
+install instructions.
 
 ## Build and validate
 
@@ -197,8 +209,10 @@ plugin catalogs. Previously indexed third-party listings need separate cleanup.
 ## Claude Code marketplace
 
 The renderer also generates `.claude-plugin/marketplace.json`. Its Rainbrand
-entry points to `./claude`, the same directory used for Anthropic's submission.
-The marketplace file stays outside the submitted directory and release ZIPs.
+entry points to `./claude-code`, kept separate from Anthropic's submitted
+`claude/` directory so changes made for the directory listing don't reach
+marketplace installs. The marketplace file stays outside both directories and
+the release ZIPs.
 
 After this change is merged, install through the repository's marketplace:
 
@@ -211,6 +225,7 @@ For local validation before merging:
 
 ```bash
 claude plugin validate .
+claude plugin validate ./claude-code
 claude plugin validate ./claude
 ```
 
