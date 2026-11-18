@@ -1,6 +1,7 @@
 {
   "mcp": {
     "name": "rainbrand",
-    "endpoint": "https://mcp.rainbrand.com/mcp"
+    "endpoint": "https://mcp.rainbrand.com/mcp",
+    "claudeDirectoryEndpoint": "https://mcp.rainbrand.com/mcp/brand"
   }
 }

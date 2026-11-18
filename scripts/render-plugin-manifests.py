@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-"""Render provider manifests and MCP configs from canonical package sources."""
+"""Render provider manifests, MCP configs, and the Claude directory's Skill
+from canonical package sources."""
 
 import argparse
 import json
@@ -23,6 +24,11 @@ OUTPUT_PATHS = {
     'portable-mcp': ROOT / 'mcp.json',
     'claude-marketplace': ROOT / '.claude-plugin/marketplace.json',
     'gemini': ROOT / 'gemini-extension.json',
+    # Anthropic's directory doesn't list AI media generation, so its copy of
+    # the Claude bundle uses the brand-only endpoint and a matching Skill
+    # description. The package builder copies the rest of claude/.
+    'claude-directory-mcp': ROOT / 'claude/.mcp.json',
+    'claude-directory-skill': ROOT / 'claude/skills/rainbrand/SKILL.md',
 }
 
 
@@ -77,6 +83,17 @@ def read_skill_metadata():
     if missing:
         raise ValueError(f'Missing Skill metadata: {", ".join(missing)}')
     return metadata
+
+
+def skill_with_description(description):
+    """Return the canonical Skill with only its frontmatter description replaced."""
+    lines = SKILL_PATH.read_text().splitlines(keepends=True)
+    end = next(index for index, line in enumerate(lines) if index and line == '---\n')
+    matches = [index for index in range(1, end) if lines[index].startswith('description: ')]
+    if len(matches) != 1:
+        raise ValueError(f'Expected one Skill description: {SKILL_PATH}')
+    lines[matches[0]] = f'description: {description}\n'
+    return ''.join(lines)
 
 
 def build_outputs():
@@ -172,14 +189,15 @@ def build_outputs():
             },
         },
     }
-    native_mcp = {
-        'mcpServers': {
-            mcp['name']: {
-                'type': 'http',
-                'url': mcp['endpoint'],
+    def native_mcp(endpoint):
+        return {
+            'mcpServers': {
+                mcp['name']: {
+                    'type': 'http',
+                    'url': endpoint,
+                },
             },
-        },
-    }
+        }
 
     portable_manifest = {
         '$schema': 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json',
@@ -227,16 +245,20 @@ def build_outputs():
         'cursor': cursor_manifest,
         'cursor-archive': cursor_archive_manifest,
         'codex-mcp': codex_mcp,
-        'claude-mcp': native_mcp,
+        'claude-mcp': native_mcp(mcp['endpoint']),
         'portable': portable_manifest,
         'portable-mcp': portable_mcp,
         'claude-marketplace': claude_marketplace,
         'gemini': gemini_manifest,
+        'claude-directory-mcp': native_mcp(mcp['claudeDirectoryEndpoint']),
+        'claude-directory-skill': skill_with_description(claude['directorySkillDescription']),
     }
 
 
-def render(manifest):
-    return json.dumps(manifest, indent=2, ensure_ascii=False) + '\n'
+def render(document):
+    if isinstance(document, str):
+        return document
+    return json.dumps(document, indent=2, ensure_ascii=False) + '\n'
 
 
 def main():

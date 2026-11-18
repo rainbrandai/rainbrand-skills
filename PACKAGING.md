@@ -10,8 +10,10 @@ lives in `README.md`.
 - `compatibility/bloom.md` independently owns those fields and guidance for
   the legacy Bloom download. It is outside Skill discovery; the builder maps
   its unchanged bytes to `bloom/SKILL.md` in `bloom.skill.zip`.
-- `plugin-copy.json` owns provider listing, review, and publication copy.
-- `plugin-config.json` owns the Rainbrand MCP server name and endpoint.
+- `plugin-copy.json` owns provider listing, review, and publication copy,
+  including the Skill description used only in Anthropic's directory folder.
+- `plugin-config.json` owns the Rainbrand MCP server name and endpoint, plus
+  the brand-only endpoint used only in Anthropic's directory folder.
 
 Run the renderer after changing any canonical source:
 
@@ -31,6 +33,7 @@ Generated MCP files keep portable and native connection formats separate:
 | `.mcp.json` | Claude and Cursor repository installs | Native shape; the remote server entry contains `type: "http"` and `url` |
 | `mcp.json` | Portable Agent Plugins clients | Portable schema with `type: "streamable-http"` and `url` |
 | `gemini-extension.json` | Gemini CLI repository installs | Native extension with `httpUrl` and OAuth discovery |
+| `claude/.mcp.json` | Anthropic's directory submission | Native shape with the brand-only `claudeDirectoryEndpoint` |
 
 The Codex archive maps `.codex-plugin/.mcp.json` to root `.mcp.json`. All
 generated connection files get their server name and endpoint from `plugin-config.json`;
@@ -50,6 +53,14 @@ configuration at `.mcp.json`, but omits the release-only changelog. The Claude
 package builder refreshes both projections, and validation rejects drift or
 extra files. In Anthropic's developer portal, submit this repository with the
 plugin path `claude` so its scanner only reads the Claude bundle.
+
+Anthropic's directory doesn't list AI media generation, so `claude/` connects
+to the brand-only endpoint and its Skill description leaves generation out.
+The renderer writes those two files, `claude/.mcp.json` and
+`claude/skills/rainbrand/SKILL.md`; the Skill differs from the canonical one
+only in its description. Every other package, `claude-code/` included, keeps
+the main endpoint and Skill. Don't add the brand-only endpoint to customer
+install instructions.
 
 ## Build and validate
 

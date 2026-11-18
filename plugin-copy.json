@@ -8,7 +8,8 @@
     "termsOfServiceUrl": "https://www.rainbrand.com/terms/"
   },
   "claude": {
-    "description": "Rainbrand is the brand layer for agents. It maintains shared brand context that Claude can retrieve, apply, and update as the brand evolves."
+    "description": "Rainbrand is the brand layer for agents. It maintains shared brand context that Claude can retrieve, apply, and update as the brand evolves.",
+    "directorySkillDescription": "Use Rainbrand to onboard and edit brands and get brand context for a task."
   },
   "codex": {
     "keywords": [

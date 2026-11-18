@@ -56,6 +56,8 @@ CLAUDE_DIRECTORY_MEMBERS = [
     '.claude-plugin/plugin.json', '.mcp.json',
     *(member for member in SHARED_MEMBERS if member != 'CHANGELOG.md'),
 ]
+# Rendered for Anthropic's directory instead of copied from the package sources.
+CLAUDE_DIRECTORY_RENDERED_MEMBERS = ['.mcp.json', 'skills/rainbrand/SKILL.md']
 
 
 class PackageValidationTests(unittest.TestCase):
@@ -146,6 +148,7 @@ class PackageValidationTests(unittest.TestCase):
         review = self.plugin_copy['codex']['review']
         prose = [
             self.plugin_copy['claude']['description'],
+            self.plugin_copy['claude']['directorySkillDescription'],
             interface['shortDescription'], interface['longDescription'],
             *interface['capabilities'], *interface['defaultPrompt'],
             review['commerce_description'],
@@ -452,25 +455,97 @@ class PackageValidationTests(unittest.TestCase):
             if path.is_file()
         )
 
-    def test_claude_directories_match_package_sources(self):
-        for name in (CLAUDE_CODE_DIRECTORY, CLAUDE_DIRECTORY):
-            with self.subTest(directory=name):
-                self.assertEqual(self.directory_members(name), sorted(CLAUDE_DIRECTORY_MEMBERS))
-                for target in CLAUDE_DIRECTORY_MEMBERS:
-                    self.assertEqual(
-                        (self.root / name / target).read_bytes(),
-                        (self.root / target).read_bytes(),
-                    )
+    def test_claude_code_directory_matches_package_sources(self):
+        self.assertEqual(
+            self.directory_members(CLAUDE_CODE_DIRECTORY), sorted(CLAUDE_DIRECTORY_MEMBERS))
+        for target in CLAUDE_DIRECTORY_MEMBERS:
+            self.assertEqual(
+                (self.root / CLAUDE_CODE_DIRECTORY / target).read_bytes(),
+                (self.root / target).read_bytes(),
+            )
+
+    def test_claude_directory_differs_only_in_endpoint_and_skill_description(self):
+        directory = self.root / CLAUDE_DIRECTORY
+        self.assertEqual(self.directory_members(CLAUDE_DIRECTORY), sorted(CLAUDE_DIRECTORY_MEMBERS))
+        for target in CLAUDE_DIRECTORY_MEMBERS:
+            if target not in CLAUDE_DIRECTORY_RENDERED_MEMBERS:
+                self.assertEqual((directory / target).read_bytes(), (self.root / target).read_bytes())
+
+        endpoint = self.plugin_config['mcp']['claudeDirectoryEndpoint']
+        self.assertNotEqual(endpoint, self.plugin_config['mcp']['endpoint'])
+        expected_mcp = copy.deepcopy(self.claude_mcp)
+        expected_mcp['mcpServers']['rainbrand']['url'] = endpoint
+        self.assertEqual(json.loads((directory / '.mcp.json').read_text()), expected_mcp)
+
+        description = self.plugin_copy['claude']['directorySkillDescription']
+        self.assertNotIn('generat', description.lower())
+        canonical = (self.root / 'skills/rainbrand/SKILL.md').read_text()
+        canonical_line = next(
+            line for line in canonical.splitlines() if line.startswith('description: '))
+        self.assertEqual(
+            (directory / 'skills/rainbrand/SKILL.md').read_text(),
+            canonical.replace(canonical_line, f'description: {description}', 1),
+        )
+
+    def test_claude_directory_overrides_reach_only_the_directory(self):
+        validator = (self.root / 'scripts/validate-manifests.awk').read_text()
+        self.assertNotIn(self.plugin_config['mcp']['claudeDirectoryEndpoint'], validator)
+        untouched = [
+            '.mcp.json', 'skills/rainbrand/SKILL.md', 'dist/rainbrand.claude-plugin.zip',
+            *(f'{CLAUDE_CODE_DIRECTORY}/{member}' for member in CLAUDE_DIRECTORY_RENDERED_MEMBERS),
+        ]
+        before = {path: (self.root / path).read_bytes() for path in untouched}
+
+        changed_config = copy.deepcopy(self.plugin_config)
+        changed_config['mcp']['claudeDirectoryEndpoint'] = 'https://mcp.example.com/mcp/brand'
+        self.write_json('plugin-config.json', changed_config)
+        changed_copy = copy.deepcopy(self.plugin_copy)
+        changed_copy['claude']['directorySkillDescription'] = 'Use Rainbrand for brand context.'
+        self.write_json('plugin-copy.json', changed_copy)
+        self.run_renderer('--check', succeeds=False)
+        self.run_script('package-claude-plugin.sh')
+
+        directory = self.root / CLAUDE_DIRECTORY
+        mcp = json.loads((directory / '.mcp.json').read_text())
+        self.assertEqual(mcp['mcpServers']['rainbrand']['url'], 'https://mcp.example.com/mcp/brand')
+        skill = (directory / 'skills/rainbrand/SKILL.md').read_text()
+        self.assertIn('\ndescription: Use Rainbrand for brand context.\n', skill)
+        for path, contents in before.items():
+            with self.subTest(path=path):
+                self.assertEqual((self.root / path).read_bytes(), contents)
+
+    def test_claude_directory_overrides_are_validated(self):
+        cases = (
+            ('plugin-config.json', self.plugin_config, 'mcp', 'claudeDirectoryEndpoint',
+             'http://mcp.example.com/mcp/brand'),
+            ('plugin-copy.json', self.plugin_copy, 'claude', 'directorySkillDescription', 'x' * 201),
+        )
+        for path, original, section, key, value in cases:
+            with self.subTest(key=key):
+                changed = copy.deepcopy(original)
+                changed[section][key] = value
+                self.write_json(path, changed)
+                self.run_script('package-claude-plugin.sh', succeeds=False)
+                self.write_json(path, original)
 
     def test_claude_directory_drift_is_rejected_and_repaired(self):
-        for name in (CLAUDE_CODE_DIRECTORY, CLAUDE_DIRECTORY):
-            with self.subTest(directory=name):
-                readme = self.root / name / 'README.md'
-                readme.write_text('Stale projection.\n')
+        targets = [
+            (CLAUDE_CODE_DIRECTORY, 'README.md'),
+            (CLAUDE_CODE_DIRECTORY, '.mcp.json'),
+            (CLAUDE_DIRECTORY, 'README.md'),
+            *((CLAUDE_DIRECTORY, member) for member in CLAUDE_DIRECTORY_RENDERED_MEMBERS),
+        ]
+        for name, target in targets:
+            with self.subTest(directory=name, target=target):
+                path = self.root / name / target
+                original = path.read_bytes()
+                path.write_text('Stale projection.\n')
                 self.run_script('validate-claude-plugin.sh', succeeds=False)
                 self.run_script('package-claude-plugin.sh')
-                self.assertEqual(readme.read_bytes(), (self.root / 'README.md').read_bytes())
+                self.assertEqual(path.read_bytes(), original)
 
+        for name in (CLAUDE_CODE_DIRECTORY, CLAUDE_DIRECTORY):
+            with self.subTest(directory=name, target='extra.txt'):
                 extra = self.root / name / 'extra.txt'
                 extra.write_text('Unexpected file.\n')
                 self.run_script('validate-claude-plugin.sh', succeeds=False)
